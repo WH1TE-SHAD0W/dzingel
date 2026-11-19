@@ -1,0 +1,11 @@
+{
+  "name": "dzingel",
+  "main": "worker/index.ts",
+  "compatibility_date": "2025-01-01",
+  "assets": {
+    "directory": "./dist",
+    // Only /api/* hits the worker; everything else is served as static assets.
+    "run_worker_first": ["/api/*"]
+  },
+  "services": [{ "binding": "API", "service": "dzingel-api" }]
+}

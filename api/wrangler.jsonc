@@ -1,0 +1,13 @@
+{
+  "name": "dzingel-api",
+  "main": "src/worker.ts",
+  "compatibility_date": "2025-01-01",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dzingel",
+      "database_id": "5fbe18de-0940-4b48-bd0c-c02bf02855b8",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
