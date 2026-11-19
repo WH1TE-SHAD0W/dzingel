@@ -1,6 +1,8 @@
 {
   "name": "dzingel-api",
   "main": "src/worker.ts",
+  "workers_dev": false,
+  "preview_urls": false,
   "compatibility_date": "2025-01-01",
   "d1_databases": [
     {
