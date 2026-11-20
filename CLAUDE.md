@@ -25,6 +25,7 @@ Hono (`api/`) → SQLite (node:sqlite self-host, Cloudflare D1 in the current de
 - Never change `wrangler.jsonc` bindings/IDs, deploy (`npm run deploy:*`), or apply remote D1
   migrations unless the human explicitly asks.
 - Only `issue-manager` writes to GitHub Issues; every other agent reads them (hook-enforced).
+  Only `pr-manager` opens/edits PRs and `pr-reviewer` comments on them; no agent merges or approves.
 - Keep the architecture: no ORM, no extra database, no server-side framework swap
   (`docs/adr/0001-*`). Route handlers use only the `Db` interface so node:sqlite **and** D1 both
   work (`docs/adr/0002-*`). Never edit an applied migration — add the next numbered one.
@@ -64,6 +65,8 @@ Hono (`api/`) → SQLite (node:sqlite self-host, Cloudflare D1 in the current de
   skill). Stage only the files you changed — never `git add -A`.
 - Each agent commits its own slice: `developer` code, `tester` tests, `documenter` docs.
 - Never push, force-push, amend a pushed commit or skip hooks without the human asking.
+  Exception: in `/build-feature N`, `pr-manager` pushes that issue's branch and opens its PR after
+  the reviewer approves (running the command is the human asking). Nobody merges; the human does.
 
 ## Agent team (`.claude/agents/`)
 | Agent | Does | Writes |
@@ -73,7 +76,9 @@ Hono (`api/`) → SQLite (node:sqlite self-host, Cloudflare D1 in the current de
 | `tester` | Tests per acceptance criterion, edge cases, runs the suite | tests only |
 | `documenter` | ADRs and docs | `docs/` only |
 | `reviewer` | Read-only audit → APPROVE / BLOCK | nothing |
-| `feature-builder` | Supervisor: gather → implement → test → document → review → report | nothing (delegates) |
+| `pr-manager` | After APPROVE: pushes the issue branch, opens the PR from the template | the PR (push + `gh pr create`) |
+| `pr-reviewer` | Verifies the opened PR (body, links, diff, CI) and posts one comment; ends the flow | one PR comment |
+| `feature-builder` | Supervisor: gather → implement → test → document → review → open PR → verify PR → report | nothing (delegates) |
 
 Entry points: `/ticket <idea>`, `/build-feature <N>`, `/git-commit`, `/git-pr-summary`, `/adr`.
 Process, labels and definition of done: `docs/workflow.md`.

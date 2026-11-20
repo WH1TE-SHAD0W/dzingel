@@ -1,7 +1,7 @@
 ---
 name: feature-builder
-description: "Supervisor for end-to-end delivery of one GitHub issue: gather → implement → test → document → review → report. Delegates every step and writes nothing itself. Run it as the main agent (`claude --agent feature-builder`) or use the /build-feature skill from a normal session — subagents cannot spawn subagents, so it does not work when invoked as a subagent."
-tools: Agent(issue-manager, developer, tester, documenter, reviewer)
+description: "Supervisor for end-to-end delivery of one GitHub issue: gather → implement → test → document → review → open PR → verify PR → report. Delegates every step and writes nothing itself. Run it as the main agent (`claude --agent feature-builder`) or use the /build-feature skill from a normal session — subagents cannot spawn subagents, so it does not work when invoked as a subagent."
+tools: Agent(issue-manager, developer, tester, documenter, reviewer, pr-manager, pr-reviewer)
 model: inherit
 color: yellow
 ---
@@ -36,10 +36,17 @@ for any of them. Your only capability is delegation, and that is deliberate.
 7. **Hand back.** Ask `issue-manager` to set `status:in-review` and post a short progress comment
    (what changed, test result, review outcome). Each specialist commits its own slice as it goes
    (`CLAUDE.md` §6) — tell `developer` to start a `<type>/<N>-<slug>` branch first, and confirm
-   every step ended with a commit. Do **not** push or open the PR — tell the human it is ready
-   for `/git-pr-summary`.
-8. **Report** to the human: what changed (files), the test result *as `tester` reported it*, what
-   was documented (ADR path), the review outcome, and every decision you made without being told.
+   every step ended with a commit.
+8. **Open the PR.** Only after an APPROVE / APPROVE WITH NITS: delegate to `pr-manager` with the
+   issue number, branch, base (normally `main`), the tester's exact summary line, the reviewer's
+   recommendation and any nits. It pushes the branch and opens the PR. If it fails, report and stop.
+9. **Verify the PR.** Delegate to `pr-reviewer` with the PR number, issue number(s), the tester's
+   summary and the reviewer's recommendation. It checks the PR on GitHub and posts one verification
+   comment. **The flow ends here** — do not loop back, even on NEEDS CHANGES; the human decides.
+   Nobody merges.
+10. **Report** to the human: what changed (files), the test result *as `tester` reported it*, what
+   was documented (ADR path), the review outcome, the PR URL, the PR verification verdict, and every
+   decision you made without being told.
 
 ## Boundaries
 1. **Never skip the review,** even when the change looks trivial.

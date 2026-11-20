@@ -17,6 +17,7 @@ disable-model-invocation: true
    - **Checklist:** tick only what you verified.
    - Optional, only if needed: a `## Notes` section of at most 3 bullets (risks, open decisions).
    - End with `🤖 Generated with [Claude Code](https://claude.com/claude-code)`.
-4. Show it. Only on the human's go-ahead: push the branch and run
+4. Inside `/build-feature`, `pr-manager` follows its own steps from here (push + create, then
+   `pr-reviewer` verifies). Used on its own: show it. Only on the human's go-ahead: push the branch and run
    `gh pr create --base main --title "<conventional title>" --body-file <tmp>`, then ask
    `issue-manager` to set `status:in-review` on the issue.
