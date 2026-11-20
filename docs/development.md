@@ -42,9 +42,19 @@ Environment variables for the API: `PORT` (default `8787`), `DB_FILE` (default `
 ```powershell
 npm run typecheck -w api
 npm run typecheck -w web    # astro check — needs @astrojs/check installed
+npm test -w api             # vitest run
 ```
 
-There is no test runner yet — adding Vitest is backlog item E8 (`context/backlog.md`).
+API tests use Vitest and live in `api/test/`. Each test builds its own app with
+`createApp(nodeDb(":memory:"))`, so no state is shared between tests. `api/test/smoke.test.ts`
+covers the existing groups and quotes endpoints (happy path plus validation errors). Source:
+GitHub issue WH1TE-SHAD0W/dzingel#1; tool choice per `context/testing-strategy.md`.
+
+`api/tsconfig.json` includes only `src`, so `npm run typecheck -w api` does not type-check the test
+files. Vitest transpiles them without type checking.
+
+Last result reported by `tester` (commit 806da9f): "Test Files 1 passed (1) / Tests 32 passed (32)";
+typecheck exit 0.
 
 ## Migrations
 
