@@ -4,7 +4,10 @@
 export const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
 /** Show (or clear, with "") the inline error for one field. */
-export function setFieldError(input: HTMLInputElement, message: string): void {
+export function setFieldError(
+  input: HTMLInputElement | HTMLTextAreaElement,
+  message: string,
+): void {
   const el = document.getElementById(`${input.id}-error`);
   if (el) el.textContent = message;
   if (message) input.setAttribute("aria-invalid", "true");

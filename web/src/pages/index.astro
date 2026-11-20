@@ -13,21 +13,14 @@ import TopPanel from "../components/TopPanel.astro";
       a group you were invited to.
     </p>
     <div id="group-content" hidden>
+      <p class="list-actions">
+        <a class="btn" href="/quotes/new">Add quote</a>
+      </p>
       <div class="field">
         <label for="search">Search quotes</label>
         <input id="search" type="search" maxlength="100" autocomplete="off" />
       </div>
-      <form id="form" class="quote-form">
-        <div class="field">
-          <label for="text">Quote</label>
-          <input id="text" type="text" required maxlength="1000" autocomplete="off" />
-        </div>
-        <div class="field">
-          <label for="context">Context: what was the situation?</label>
-          <textarea id="context" rows="2" maxlength="2000"></textarea>
-        </div>
-        <button class="btn" type="submit">Save quote</button>
-      </form>
+      <p id="list-status" class="hint" role="status"></p>
       <ul id="list" class="quote-list" aria-label="Quotes"></ul>
     </div>
   </main>
@@ -37,13 +30,9 @@ import TopPanel from "../components/TopPanel.astro";
 </Base>
 
 <style is:global>
-  .quote-form {
-    margin: 1rem 0 1.5rem;
-    padding: 1.25rem;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-  }
+  /* Global (not scoped) because list items are created by the script. */
+  .list-actions { margin: 0.5rem 0 1.25rem; }
+  .list-actions .btn { font-size: 1.1rem; padding: 0.6rem 1.4rem; }
   .quote-list { padding: 0; list-style: none; }
   .quote-list li {
     margin: 0 0 0.8rem;
@@ -52,6 +41,8 @@ import TopPanel from "../components/TopPanel.astro";
     border: 1px solid var(--line);
     border-radius: var(--radius);
   }
-  .quote-list small { color: var(--muted); display: block; margin-bottom: 0.5rem; }
+  .quote-list p { margin: 0 0 0.5rem; overflow-wrap: anywhere; white-space: pre-line; }
+  .quote-list .quote-text { font-size: 1.1rem; font-weight: 600; }
+  .quote-list .quote-meta { color: var(--muted); font-size: 0.95rem; }
   .quote-list button { min-height: 2.5rem; }
 </style>
