@@ -133,24 +133,50 @@ app.use("/api/*", (c, next) =>
   c.req.path.startsWith("/api/auth/") ? next() : requireSession(c, next));
 
 // --- Groups & quotes -----------------------------------------------------------------------
+// Every route is scoped to groups the user is a member of. A group or quote the user cannot
+// access answers 404, exactly like one that does not exist, so existence is not leaked.
 
-app.get("/api/groups", async (c) => c.json(await db.all("SELECT * FROM groups ORDER BY name")));
+const isMember = async (groupId: number, userId: string) =>
+  (await db.all("SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?", groupId, userId))
+    .length > 0;
+
+const notFound = (c: Context<Env>) => c.json({ error: "not found" }, 404);
+
+app.get("/api/groups", async (c) =>
+  c.json(
+    await db.all(
+      `SELECT g.id, g.name FROM groups g JOIN group_members m ON m.group_id = g.id
+       WHERE m.user_id = ? ORDER BY g.name, g.id`,
+      c.get("user").id,
+    ),
+  ));
 
 app.post("/api/groups", async (c) => {
   const name = str((await c.req.json()).name, 100);
   if (!name) return c.json({ error: "invalid name" }, 400);
-  const { id } = await db.run("INSERT INTO groups (name) VALUES (?)", name);
+  const userId = c.get("user").id;
+  const { id } = await db.run("INSERT INTO groups (name, created_by) VALUES (?, ?)", name, userId);
+  try {
+    await db.run("INSERT INTO group_members (group_id, user_id) VALUES (?, ?)", id, userId);
+  } catch (err) {
+    // No transaction in the Db interface: undo so no memberless group is left behind.
+    await db.run("DELETE FROM groups WHERE id = ?", id);
+    throw err;
+  }
   return c.json({ id, name }, 201);
 });
 
 // ?group=<id>&q=<keyword>
 app.get("/api/quotes", async (c) => {
   const group = Number(c.req.query("group"));
+  if (!(await isMember(group, c.get("user").id))) return notFound(c);
   const q = `%${c.req.query("q") ?? ""}%`;
   return c.json(
     await db.all(
-      `SELECT * FROM quotes WHERE group_id = ? AND (text LIKE ? OR context LIKE ?)
-       ORDER BY created_at DESC, id DESC`,
+      `SELECT q.id, q.group_id, q.text, q.context, q.created_at, u.username AS author
+       FROM quotes q LEFT JOIN "user" u ON u.id = q.created_by
+       WHERE q.group_id = ? AND (q.text LIKE ? OR q.context LIKE ?)
+       ORDER BY q.created_at DESC, q.id DESC`,
       group, q, q,
     ),
   );
@@ -161,12 +187,17 @@ app.post("/api/quotes", async (c) => {
   const text = str(b.text, 1000);
   const context = typeof b.context === "string" ? b.context.slice(0, 2000) : "";
   if (!text || !Number.isInteger(b.group_id)) return c.json({ error: "invalid input" }, 400);
+  const userId = c.get("user").id;
+  if (!(await isMember(b.group_id, userId))) return notFound(c);
   const { id } = await db.run(
-    "INSERT INTO quotes (group_id, text, context) VALUES (?, ?, ?)",
-    b.group_id, text, context,
+    "INSERT INTO quotes (group_id, text, context, created_by) VALUES (?, ?, ?, ?)",
+    b.group_id, text, context, userId,
   );
   return c.json({ id }, 201);
 });
+
+// Update/delete match only quotes in the user's groups; zero changed rows → 404.
+const MEMBER_QUOTE = "id = ? AND group_id IN (SELECT group_id FROM group_members WHERE user_id = ?)";
 
 app.put("/api/quotes/:id", async (c) => {
   const b = await c.req.json();
@@ -174,14 +205,17 @@ app.put("/api/quotes/:id", async (c) => {
   const context = typeof b.context === "string" ? b.context.slice(0, 2000) : "";
   if (!text) return c.json({ error: "invalid input" }, 400);
   const { changes } = await db.run(
-    "UPDATE quotes SET text = ?, context = ? WHERE id = ?", text, context, c.req.param("id"),
+    `UPDATE quotes SET text = ?, context = ? WHERE ${MEMBER_QUOTE}`,
+    text, context, c.req.param("id"), c.get("user").id,
   );
-  return changes ? c.json({ ok: true }) : c.json({ error: "not found" }, 404);
+  return changes ? c.json({ ok: true }) : notFound(c);
 });
 
 app.delete("/api/quotes/:id", async (c) => {
-  await db.run("DELETE FROM quotes WHERE id = ?", c.req.param("id"));
-  return c.json({ ok: true });
+  const { changes } = await db.run(
+    `DELETE FROM quotes WHERE ${MEMBER_QUOTE}`, c.req.param("id"), c.get("user").id,
+  );
+  return changes ? c.json({ ok: true }) : notFound(c);
 });
 
 return app;
