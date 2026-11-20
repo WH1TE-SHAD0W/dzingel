@@ -35,8 +35,9 @@ Technology Stack*. Code references describe the repository as of this file's cre
     The web worker only needs `dzingel-api` to exist (service binding); a change that needs both
     sides at once must be made backward compatible, or the web build re-run after the API.
   - No production approval gate for now.
-  - Wanted, not yet scoped: "XPs on Cloudflare infra" (read as per-branch/PR preview
-    deployments; see backlog E9 for the production-data caveat).
+  - **Why Cloudflare-native tooling:** the human wants to gain hands-on experience with Cloudflare
+    infrastructure (stated 2026-11-20). When a CI/CD choice is otherwise even, prefer the Cloudflare
+    product (Workers Builds, D1, worker secrets) over a third-party or GitHub-side equivalent.
 - **Why 3-tier:** standard cloud-native separation of concerns, horizontal scalability, and each
   tier can be replaced later (e.g. migrate the DB) without breaking the system.
 

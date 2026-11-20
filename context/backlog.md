@@ -60,8 +60,5 @@ Builds deploys `dzingel-api` and `dzingel` on push to `main`; no production appr
 - [ ] `dzingel-api` deploys via Workers Builds: remote D1 migrations, then `wrangler deploy` → #15
 - [ ] `dzingel` deploys via Workers Builds, plus a post-deploy smoke check (`/` 200,
       `/api/auth/me` 401) → #16
-- [ ] **Wanted, not yet scoped or filed:** "XPs on Cloudflare infra" (human, 2026-11-20) — read as
-      preview deployments per branch/PR on Cloudflare (Workers Builds non-production branch builds).
-      Confirm the meaning before filing. Caveat: `dzingel-api` has `preview_urls: false`, and a web
-      preview's service binding points at the production `dzingel-api` and its D1 data. A preview
-      must not touch production data, so it needs its own API worker or a separate D1 database.
+Goal behind E9: the human wants hands-on experience with Cloudflare infrastructure (2026-11-20), so
+Cloudflare-native tools are preferred where the choice is otherwise even.
