@@ -1,14 +1,12 @@
-## Summary
+## What
+<!-- 1–2 sentences: what changed and why -->
 
 Closes #
 
-## Acceptance criteria
-| # | Criterion | Evidence (test / file) |
-|---|---|---|
+## Tests
+<!-- paste the summary line, e.g. "Tests 353 passed (353)" -->
 
-## Verification
-- [ ] `npm run typecheck -w api`
-- [ ] Tests pass (or: no test runner yet)
-- [ ] Both DB adapters considered (node:sqlite, D1)
-- [ ] No quote text / personal data in logs; synthetic test data only
-- [ ] `docs/` updated · ADR if a constraining decision was made
+## Checklist
+- [ ] Typecheck and tests pass
+- [ ] No quote text or personal data in logs; synthetic test data only
+- [ ] `docs/` updated if behaviour changed
