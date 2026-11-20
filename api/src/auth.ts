@@ -36,6 +36,10 @@ export function createAuth(database: BetterAuthOptions["database"], options: Aut
     // per Node process / per Workers isolate: a best-effort limit, not a global one.
     rateLimit: { enabled: options.rateLimit ?? true, storage: "memory" },
     advanced: {
+      // Explicit: Better Auth turns the origin/CSRF check off when NODE_ENV === "test" or TEST
+      // is truthy, so an environment variable must not be able to disable it.
+      disableOriginCheck: false,
+      disableCSRFCheck: false,
       ipAddress: { ipAddressHeaders: options.ipAddressHeaders ?? ["x-forwarded-for"] },
     },
     emailAndPassword: {
