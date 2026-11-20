@@ -230,8 +230,20 @@ app.post("/api/quotes", async (c) => {
   return c.json({ id }, 201);
 });
 
-// Update/delete match only quotes in the user's groups; zero changed rows → 404.
+// Read/update/delete match only quotes in the user's groups; no row → 404.
 const MEMBER_QUOTE = "id = ? AND group_id IN (SELECT group_id FROM group_members WHERE user_id = ?)";
+
+app.get("/api/quotes/:id", async (c) => {
+  const id = parseId(c.req.param("id"));
+  if (id === null) return invalid(c);
+  const [quote] = await db.all(
+    `SELECT q.id, q.group_id, q.text, q.context, q.created_at, u.username AS author
+     FROM quotes q LEFT JOIN "user" u ON u.id = q.created_by
+     WHERE q.id = ? AND q.group_id IN (SELECT group_id FROM group_members WHERE user_id = ?)`,
+    id, c.get("user").id,
+  );
+  return quote ? c.json(quote) : notFound(c);
+});
 
 app.put("/api/quotes/:id", async (c) => {
   const id = parseId(c.req.param("id"));
