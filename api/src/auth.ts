@@ -13,6 +13,11 @@ export interface AuthOptions {
   /** Extra origins allowed to call auth endpoints (e.g. the Astro dev server on :4321). */
   trustedOrigins?: string[];
   /**
+   * Public origin of the app, from `BETTER_AUTH_URL` (e.g. `https://dzingel.example.org`). When
+   * unset, Better Auth falls back to its own detection (env on Node, else the request URL).
+   */
+  baseURL?: string;
+  /**
    * Rate limiting of Better Auth's endpoints (sign-up/sign-in: 3 per 10 s per client IP; others:
    * 100 per 10 s). Default `true`. Turn off only in tests that create many sessions quickly.
    */
@@ -30,6 +35,7 @@ export function createAuth(database: BetterAuthOptions["database"], options: Aut
   return betterAuth({
     database,
     secret: options.secret,
+    baseURL: options.baseURL || undefined,
     trustedOrigins: options.trustedOrigins,
     // Explicit: Better Auth would enable it only when NODE_ENV === "production" at load time,
     // which nothing sets (and Workers do not populate process.env). Storage is in-memory, i.e.

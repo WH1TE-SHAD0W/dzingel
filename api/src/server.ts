@@ -12,7 +12,11 @@ if (!secret) {
 const trustedOrigins = (process.env.TRUSTED_ORIGINS ?? "http://localhost:4321")
   .split(",").map((o) => o.trim()).filter(Boolean);
 
+// Public origin (e.g. https://dzingel.example.org); optional.
+const baseURL = process.env.BETTER_AUTH_URL;
+
 const db = nodeDb();
 const port = Number(process.env.PORT ?? 8787);
-serve({ fetch: createApp(db, createAuth(db.sqlite, { secret, trustedOrigins })).fetch, port }, () =>
+const auth = createAuth(db.sqlite, { secret, trustedOrigins, baseURL });
+serve({ fetch: createApp(db, auth).fetch, port }, () =>
   console.log(`API on http://localhost:${port}`));

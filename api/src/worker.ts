@@ -8,6 +8,8 @@ type Env = {
   BETTER_AUTH_SECRET?: string;
   /** Optional comma-separated extra origins allowed to call /api/auth. */
   TRUSTED_ORIGINS?: string;
+  /** Optional public origin of the app (e.g. https://dzingel.example.org). */
+  BETTER_AUTH_URL?: string;
 };
 
 let app: ReturnType<typeof createApp> | undefined;
@@ -19,6 +21,7 @@ export default {
       d1Db(env.DB),
       createAuth(env.DB, {
         secret: env.BETTER_AUTH_SECRET ?? "",
+        baseURL: env.BETTER_AUTH_URL,
         trustedOrigins: env.TRUSTED_ORIGINS?.split(",").map((o) => o.trim()).filter(Boolean),
         // Set by Cloudflare's edge (a client cannot forge it) and kept on the request the web
         // worker forwards through the service binding. Rate-limit storage is per isolate.
