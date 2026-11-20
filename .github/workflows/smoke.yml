@@ -1,0 +1,37 @@
+# Post-deploy smoke check of the public site (issue #16, option a).
+# Read-only GET requests against vars.PUBLIC_URL; no secrets, no deploy, no Cloudflare access.
+name: Smoke check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 6 * * *" # daily, 06:17 UTC
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smoke
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Smoke check public site
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      # Fails (exit 2) when the repo variable PUBLIC_URL is unset or invalid,
+      # exit 1 when any check fails.
+      - name: Run smoke check
+        env:
+          PUBLIC_URL: ${{ vars.PUBLIC_URL }}
+        run: node scripts/smoke-check.mjs
