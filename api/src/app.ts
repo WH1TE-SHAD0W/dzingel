@@ -256,5 +256,98 @@ app.delete("/api/quotes/:id", async (c) => {
   return changes ? c.json({ ok: true }) : notFound(c);
 });
 
+// --- Invites -------------------------------------------------------------------------------
+// A non-member gets 403 whether or not the group exists, so existence is not leaked. An invite
+// that is not addressed to the caller answers 404, like one that does not exist.
+
+app.post("/api/groups/:id/invites", async (c) => {
+  const group = parseId(c.req.param("id"));
+  const raw = (await readJson(c))?.username;
+  const username = typeof raw === "string" ? raw.trim().toLowerCase() : "";
+  if (group === null || !USERNAME_RE.test(username)) return invalid(c);
+  const inviterId = c.get("user").id;
+  if (!(await isMember(group, inviterId))) return c.json({ error: "forbidden" }, 403);
+  const [invitee] = await db.all<{ id: string }>(
+    `SELECT id FROM "user" WHERE username = ?`, username,
+  );
+  if (!invitee) return notFound(c);
+  // One statement: skipped if the invitee is already a member (WHERE NOT EXISTS) or already has
+  // a pending invite (partial unique index + OR IGNORE). Either way no row → 409.
+  const { id, changes } = await db.run(
+    `INSERT OR IGNORE INTO group_invites (group_id, inviter_id, invitee_id)
+     SELECT ?, ?, ?
+     WHERE NOT EXISTS (SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?)`,
+    group, inviterId, invitee.id, group, invitee.id,
+  );
+  if (!changes) return c.json({ error: "already a member or invited" }, 409);
+  return c.json({ id, group_id: group, invitee_id: invitee.id, status: "pending" }, 201);
+});
+
+// The caller's pending invites, newest first.
+app.get("/api/invites", async (c) =>
+  c.json(
+    await db.all(
+      `SELECT i.id, i.group_id, g.name AS group_name, u.username AS inviter, i.created_at
+       FROM group_invites i
+       JOIN groups g ON g.id = i.group_id
+       LEFT JOIN "user" u ON u.id = i.inviter_id
+       WHERE i.invitee_id = ? AND i.status = 'pending'
+       ORDER BY i.created_at DESC, i.id DESC`,
+      c.get("user").id,
+    ),
+  ));
+
+type Invite = { group_id: number; status: string };
+
+const answered = (c: Context<Env>) => c.json({ error: "invite already answered" }, 409);
+
+/** Load an invite addressed to the caller; a Response if it is missing (404) or answered (409). */
+const ownPendingInvite = async (c: Context<Env>): Promise<(Invite & { id: number }) | Response> => {
+  const id = parseId(c.req.param("id"));
+  if (id === null) return invalid(c);
+  const [inv] = await db.all<Invite>(
+    "SELECT group_id, status FROM group_invites WHERE id = ? AND invitee_id = ?",
+    id, c.get("user").id,
+  );
+  if (!inv) return notFound(c);
+  if (inv.status !== "pending") return answered(c);
+  return { id, ...inv };
+};
+
+/** Mark a pending invite answered; false if it was answered concurrently. */
+const respond = async (id: number, status: "accepted" | "declined") =>
+  (await db.run(
+    `UPDATE group_invites SET status = ?, responded_at = CURRENT_TIMESTAMP
+     WHERE id = ? AND status = 'pending'`,
+    status, id,
+  )).changes > 0;
+
+app.post("/api/invites/:id/accept", async (c) => {
+  const inv = await ownPendingInvite(c);
+  if (inv instanceof Response) return inv;
+  // Claim the invite first so a concurrent accept/decline cannot also succeed.
+  if (!(await respond(inv.id, "accepted"))) return answered(c);
+  try {
+    await db.run(
+      "INSERT OR IGNORE INTO group_members (group_id, user_id) VALUES (?, ?)",
+      inv.group_id, c.get("user").id,
+    );
+  } catch (err) {
+    // No transaction in the Db interface: put the invite back to pending.
+    await db.run(
+      "UPDATE group_invites SET status = 'pending', responded_at = NULL WHERE id = ?", inv.id,
+    );
+    throw err;
+  }
+  return c.json({ ok: true, group_id: inv.group_id });
+});
+
+app.post("/api/invites/:id/decline", async (c) => {
+  const inv = await ownPendingInvite(c);
+  if (inv instanceof Response) return inv;
+  if (!(await respond(inv.id, "declined"))) return answered(c);
+  return c.json({ ok: true });
+});
+
 return app;
 }
