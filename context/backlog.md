@@ -45,8 +45,20 @@ Once an item is filed, add its issue number here, e.g. `E1 → #3`.
 - [ ] HTTPS guidance (reverse proxy / certificates) in the deployment guide
 
 ## E8 — Testing and CI  *(NFR-10, SEC-07, testing strategy)* — priority: high
-- [ ] Add Vitest to `api`, first tests for existing group/quote endpoints
-- [ ] GitHub Actions: install, typecheck, test on every PR
+- [x] Add Vitest to `api`, first tests for existing group/quote endpoints → #1
+- [ ] GitHub Actions: install, typecheck, test on every PR → #13 (under E9)
 - [ ] Snyk + OWASP ZAP in the pipeline
 - [ ] Tag-based container build and push to Docker Hub
 - [ ] Locust performance script and a documented baseline against NFR-01..03
+
+## E9 — CI/CD to Cloudflare  *(NFR-10)* — priority: high → epic #17
+Decided 2026-11-20: GitHub Actions runs checks only, with no Cloudflare secrets; Cloudflare Workers
+Builds deploys `dzingel-api` and `dzingel` on push to `main`; no production approval gate for now.
+- [ ] Verify every PR with GitHub Actions (tests, typecheck, web build) → #13
+- [ ] Cloudflare prerequisites: `nodejs_compat`, worker secret `BETTER_AUTH_SECRET`, connect both
+      workers to the repo in Workers Builds (build token with D1 edit for migrations) → #14
+- [ ] `dzingel-api` deploys via Workers Builds: remote D1 migrations, then `wrangler deploy` → #15
+- [ ] `dzingel` deploys via Workers Builds, plus a post-deploy smoke check (`/` 200,
+      `/api/auth/me` 401) → #16
+Goal behind E9: the human wants hands-on experience with Cloudflare infrastructure (2026-11-20), so
+Cloudflare-native tools are preferred where the choice is otherwise even.

@@ -36,7 +36,7 @@ Legend: ✅ implemented · 🟡 partial · ⬜ not started
 | NFR-07 | Minimal client JavaScript (Astro). | Proposed technology stack |
 | NFR-08 | Each tier **replaceable** without breaking the others (e.g. DB migration). | Architectural overview |
 | NFR-09 | **Open source** with a deployment guide. | Architectural overview |
-| NFR-10 | CI/CD on **GitHub Actions**; git-tag builds push containers to Docker Hub; Watchtower suggested for updates. | Proposed technology stack |
+| NFR-10 | CI/CD on **GitHub Actions**; git-tag builds push containers to Docker Hub; Watchtower suggested for updates. For the Cloudflare deployment: GitHub Actions runs the checks (no Cloudflare secrets in GitHub) and Cloudflare Workers Builds deploys both workers on push to `main` (decided 2026-11-20, epic #17). | Proposed technology stack; human decision |
 
 ## Security requirements
 
