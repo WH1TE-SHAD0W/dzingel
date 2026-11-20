@@ -1,0 +1,42 @@
+name: Feature
+description: A new user-facing capability with testable acceptance criteria
+title: "<verb> <thing>"
+labels: ["type:feature", "status:triage"]
+body:
+  - type: textarea
+    id: story
+    attributes:
+      label: User story
+      description: Who is it for? Pick a group from context/users-and-actors.md.
+      placeholder: As a <user group>, I want <capability> so that <benefit>.
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Acceptance criteria
+      description: Numbered, independently testable, observable behaviour. Include at least one error case, and an authorisation/privacy case if user data is involved.
+      placeholder: |
+        1. ...
+        2. Invalid input returns 400 with { "error": "invalid input" }
+        3. A user who is not a member of the group gets 403
+    validations:
+      required: true
+  - type: input
+    id: requirements
+    attributes:
+      label: Requirements
+      description: IDs from context/requirements.md
+      placeholder: FR-10, SEC-02
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Related issues, ADRs, designs. "Part of #<epic>".
+  - type: markdown
+    attributes:
+      value: "⚠️ This repository is public — never paste real quotes, names or personal data. Use synthetic examples."
