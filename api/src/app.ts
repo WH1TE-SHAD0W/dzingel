@@ -153,6 +153,26 @@ const Q_MAX = 100;
 // Backslash is the LIKE escape character (`ESCAPE '\'` below): match %, _ and \ literally.
 const likePattern = (q: string) => `%${q.replace(/[\\%_]/g, "\\$&")}%`;
 
+// --- User directory (for inviting) ---------------------------------------------------------
+// ?q=<substring>. Returns only id + username; the caller is excluded (cannot invite yourself).
+// An empty q returns an empty list rather than a page of everyone.
+const USERS_Q_MAX = 30; // = max username length
+const USERS_LIMIT = 20;
+
+app.get("/api/users", async (c) => {
+  const q = (c.req.query("q") ?? "").trim();
+  if (q.length > USERS_Q_MAX) return invalid(c);
+  if (!q) return c.json([]);
+  return c.json(
+    await db.all(
+      `SELECT id, username FROM "user"
+       WHERE username IS NOT NULL AND id <> ? AND username LIKE ? ESCAPE '\\'
+       ORDER BY username LIMIT ?`,
+      c.get("user").id, likePattern(q), USERS_LIMIT,
+    ),
+  );
+});
+
 app.get("/api/groups", async (c) =>
   c.json(
     await db.all(
