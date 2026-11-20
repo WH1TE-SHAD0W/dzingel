@@ -141,6 +141,17 @@ const isMember = async (groupId: number, userId: string) =>
     .length > 0;
 
 const notFound = (c: Context<Env>) => c.json({ error: "not found" }, 404);
+const invalid = (c: Context<Env>) => c.json({ error: "invalid input" }, 400);
+
+/** Positive integer id from a JSON body value. */
+const isId = (v: unknown): v is number => Number.isSafeInteger(v) && (v as number) > 0;
+/** Positive integer id from a path/query string; null if absent or malformed. */
+const parseId = (v: string | undefined): number | null =>
+  v !== undefined && /^[1-9]\d{0,14}$/.test(v) ? Number(v) : null;
+
+const Q_MAX = 100;
+// Backslash is the LIKE escape character (`ESCAPE '\'` below): match %, _ and \ literally.
+const likePattern = (q: string) => `%${q.replace(/[\\%_]/g, "\\$&")}%`;
 
 app.get("/api/groups", async (c) =>
   c.json(
@@ -152,7 +163,7 @@ app.get("/api/groups", async (c) =>
   ));
 
 app.post("/api/groups", async (c) => {
-  const name = str((await c.req.json()).name, 100);
+  const name = str((await readJson(c))?.name, 100);
   if (!name) return c.json({ error: "invalid name" }, 400);
   const userId = c.get("user").id;
   const { id } = await db.run("INSERT INTO groups (name, created_by) VALUES (?, ?)", name, userId);
@@ -168,14 +179,16 @@ app.post("/api/groups", async (c) => {
 
 // ?group=<id>&q=<keyword>
 app.get("/api/quotes", async (c) => {
-  const group = Number(c.req.query("group"));
+  const group = parseId(c.req.query("group"));
+  const rawQ = c.req.query("q") ?? "";
+  if (group === null || rawQ.length > Q_MAX) return invalid(c);
   if (!(await isMember(group, c.get("user").id))) return notFound(c);
-  const q = `%${c.req.query("q") ?? ""}%`;
+  const q = likePattern(rawQ);
   return c.json(
     await db.all(
       `SELECT q.id, q.group_id, q.text, q.context, q.created_at, u.username AS author
        FROM quotes q LEFT JOIN "user" u ON u.id = q.created_by
-       WHERE q.group_id = ? AND (q.text LIKE ? OR q.context LIKE ?)
+       WHERE q.group_id = ? AND (q.text LIKE ? ESCAPE '\\' OR q.context LIKE ? ESCAPE '\\')
        ORDER BY q.created_at DESC, q.id DESC`,
       group, q, q,
     ),
@@ -183,10 +196,11 @@ app.get("/api/quotes", async (c) => {
 });
 
 app.post("/api/quotes", async (c) => {
-  const b = await c.req.json();
+  const b = await readJson(c);
+  if (!b) return invalid(c);
   const text = str(b.text, 1000);
   const context = typeof b.context === "string" ? b.context.slice(0, 2000) : "";
-  if (!text || !Number.isInteger(b.group_id)) return c.json({ error: "invalid input" }, 400);
+  if (!text || !isId(b.group_id)) return invalid(c);
   const userId = c.get("user").id;
   if (!(await isMember(b.group_id, userId))) return notFound(c);
   const { id } = await db.run(
@@ -200,20 +214,24 @@ app.post("/api/quotes", async (c) => {
 const MEMBER_QUOTE = "id = ? AND group_id IN (SELECT group_id FROM group_members WHERE user_id = ?)";
 
 app.put("/api/quotes/:id", async (c) => {
-  const b = await c.req.json();
+  const id = parseId(c.req.param("id"));
+  const b = await readJson(c);
+  if (id === null || !b) return invalid(c);
   const text = str(b.text, 1000);
   const context = typeof b.context === "string" ? b.context.slice(0, 2000) : "";
-  if (!text) return c.json({ error: "invalid input" }, 400);
+  if (!text) return invalid(c);
   const { changes } = await db.run(
     `UPDATE quotes SET text = ?, context = ? WHERE ${MEMBER_QUOTE}`,
-    text, context, c.req.param("id"), c.get("user").id,
+    text, context, id, c.get("user").id,
   );
   return changes ? c.json({ ok: true }) : notFound(c);
 });
 
 app.delete("/api/quotes/:id", async (c) => {
+  const id = parseId(c.req.param("id"));
+  if (id === null) return invalid(c);
   const { changes } = await db.run(
-    `DELETE FROM quotes WHERE ${MEMBER_QUOTE}`, c.req.param("id"), c.get("user").id,
+    `DELETE FROM quotes WHERE ${MEMBER_QUOTE}`, id, c.get("user").id,
   );
   return changes ? c.json({ ok: true }) : notFound(c);
 });
