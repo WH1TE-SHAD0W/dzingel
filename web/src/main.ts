@@ -60,7 +60,7 @@ function quoteItem(quote: Quote): HTMLLIElement {
   const edit = document.createElement("a");
   edit.className = "btn btn-secondary";
   edit.href = `/quotes/edit?id=${quote.id}`;
-  edit.textContent = "Edit";
+  edit.textContent = "Edit quote";
   edit.setAttribute("aria-describedby", text.id); // which quote, for screen readers
   li.append(meta, edit);
   return li;
