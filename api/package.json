@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "test": "vitest run",
+    "test": "tsc --noEmit -p tsconfig.test.json && vitest run",
     "typecheck": "tsc --noEmit",
     "deploy": "wrangler deploy",
     "migrate": "wrangler d1 migrations apply dzingel --remote"

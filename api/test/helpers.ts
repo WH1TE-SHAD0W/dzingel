@@ -69,7 +69,7 @@ export interface Harness {
 export function harness(db?: NodeDb): Harness {
   const { app, db: d } = makeApp(db);
 
-  const req: Harness["req"] = (method, path, opts = {}) => {
+  const req: Harness["req"] = async (method, path, opts = {}) => {
     const headers: Record<string, string> = { "content-type": "application/json", ...opts.headers };
     if (opts.cookie) headers.cookie = opts.cookie;
     return app.request(path, {
