@@ -1,0 +1,44 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Log in" variant="auth">
+  <main id="main">
+    <a class="brand-mark" href="/">džingel</a>
+    <div class="card">
+      <h1 id="login-title">Log in</h1>
+      <form id="login-form" novalidate aria-labelledby="login-title" aria-describedby="login-error">
+        <p id="login-error" class="alert" role="alert"></p>
+        <div class="field">
+          <label for="login-username">Username</label>
+          <input
+            id="login-username"
+            name="username"
+            type="text"
+            required
+            maxlength="30"
+            autocomplete="username"
+            autocapitalize="none"
+            spellcheck="false"
+          />
+        </div>
+        <div class="field">
+          <label for="login-password">Password</label>
+          <input
+            id="login-password"
+            name="password"
+            type="password"
+            required
+            maxlength="128"
+            autocomplete="current-password"
+          />
+        </div>
+        <button id="login-submit" class="btn btn-block" type="submit">Log in</button>
+      </form>
+      <p class="switch-link">New here? <a href="/register">Create an account</a></p>
+    </div>
+  </main>
+  <script>
+    import "../scripts/login";
+  </script>
+</Base>

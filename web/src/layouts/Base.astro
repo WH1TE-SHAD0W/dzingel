@@ -1,0 +1,280 @@
+---
+// Shared page shell: document head, skip link and the global, accessible stylesheet.
+// Everything is self-hosted: system fonts only, no external requests.
+interface Props {
+  title: string;
+  /** "auth" centres a single card (login/register); "app" is the full-width app layout. */
+  variant?: "auth" | "app";
+}
+const { title, variant = "app" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>{title === "džingel" ? title : `${title} · džingel`}</title>
+  </head>
+  <body class={`layout-${variant}`}>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <slot name="header" />
+    <noscript>
+      <p class="notice">džingel needs JavaScript turned on to work.</p>
+    </noscript>
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    color-scheme: light;
+    --bg: #f7f6f2;
+    --surface: #ffffff;
+    --text: #1c1c1c;
+    --muted: #4a4a4a;
+    --border: #8a8a8a;
+    --line: #d9d6cf;
+    --primary: #1d4ed8;
+    --primary-hover: #1e40af;
+    --primary-soft: #e8eefc;
+    --error: #b3261e;
+    --error-soft: #fdecea;
+    --success: #1b6e3a;
+    --success-soft: #e7f4ec;
+    --focus: #1d4ed8;
+    --radius: 0.6rem;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 4px 16px rgb(0 0 0 / 0.06);
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-size: 112.5%; /* 18px base, scales with the user's browser setting */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial,
+      sans-serif;
+    line-height: 1.55;
+  }
+
+  h1,
+  h2,
+  h3 {
+    line-height: 1.25;
+    margin: 0 0 0.75rem;
+  }
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.35rem; }
+
+  p { margin: 0 0 1rem; }
+
+  a {
+    color: var(--primary);
+    text-underline-offset: 0.15em;
+  }
+  a:hover { color: var(--primary-hover); }
+
+  /* Visible focus everywhere, for keyboard users. */
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 0.2rem;
+  }
+
+  .skip-link {
+    position: absolute;
+    left: 0.5rem;
+    top: -10rem;
+    z-index: 100;
+    padding: 0.6rem 1rem;
+    background: var(--surface);
+    color: var(--primary);
+    border: 2px solid var(--primary);
+    border-radius: var(--radius);
+    font-weight: 600;
+  }
+  .skip-link:focus { top: 0.5rem; }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  [hidden] { display: none !important; }
+
+  /* --- Forms ------------------------------------------------------------------------------ */
+
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  .field {
+    display: grid;
+    gap: 0.3rem;
+    margin-bottom: 1.1rem;
+  }
+
+  label {
+    font-weight: 600;
+  }
+
+  input[type="text"],
+  input[type="password"],
+  input[type="search"],
+  input:not([type]),
+  select,
+  textarea {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.55rem 0.75rem;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+  }
+  textarea { resize: vertical; }
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    border-color: var(--focus);
+    outline-offset: 1px;
+  }
+  input[aria-invalid="true"] {
+    border-color: var(--error);
+  }
+
+  .hint {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  .field-error {
+    margin: 0;
+    color: var(--error);
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .field-error:empty { display: none; }
+
+  .alert {
+    margin: 0 0 1rem;
+    padding: 0.75rem 1rem;
+    border-left: 0.35rem solid var(--error);
+    border-radius: var(--radius);
+    background: var(--error-soft);
+    color: var(--error);
+    font-weight: 600;
+  }
+  .alert:empty { display: none; }
+
+  .status {
+    margin: 0;
+    color: var(--success);
+    font-weight: 600;
+  }
+  .status:empty { display: none; }
+
+  .notice {
+    max-width: 40rem;
+    margin: 1rem auto;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 2px solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  /* --- Buttons ---------------------------------------------------------------------------- */
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 2.75rem;
+    padding: 0.5rem 1.1rem;
+    border: 2px solid var(--primary);
+    border-radius: var(--radius);
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .btn:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--primary);
+  }
+  .btn-secondary:hover { background: var(--primary-soft); color: var(--primary-hover); }
+  .btn-block { width: 100%; }
+  .btn[aria-disabled="true"],
+  .btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+
+  /* --- Auth layout (login / register) ------------------------------------------------------ */
+
+  .layout-auth main {
+    max-width: 26rem;
+    margin: 0 auto;
+    padding: 2.5rem 1rem 3rem;
+  }
+  .brand-mark {
+    display: block;
+    margin-bottom: 1.25rem;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    text-align: center;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: calc(var(--radius) * 1.5);
+    box-shadow: var(--shadow);
+    padding: 1.75rem 1.5rem;
+  }
+  .card > :last-child { margin-bottom: 0; }
+  .switch-link {
+    margin-top: 1.25rem;
+    text-align: center;
+  }
+
+  /* --- App layout --------------------------------------------------------------------------- */
+
+  .layout-app main {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 1.25rem 1rem 3rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
