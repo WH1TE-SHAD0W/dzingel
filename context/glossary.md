@@ -10,5 +10,6 @@
 | **Guardian / parent** | An adult with oversight over a minor's (7–17) account. Feature not yet designed. |
 | **Self-host** | Running the stack on your own hardware (NAS, home lab) via docker-compose. The primary deployment target. |
 | **D1** | Cloudflare's SQLite-compatible database, used by the current Cloudflare deployment. |
+| **Workers Builds** | Cloudflare's built-in CI/CD: it pulls the GitHub repo and deploys a Worker on push, so no Cloudflare token is stored in GitHub. Used to deploy `dzingel-api` and `dzingel` (epic #17). |
 | **Tier** | One of presentation (Astro/NGINX), application (Hono), data (SQLite). |
 | **MVP** | User, quote and server management with simple keyword search. |

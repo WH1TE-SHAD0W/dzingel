@@ -24,6 +24,7 @@ Source: [`proposal.md`](../proposal.md) — *Security, Performance*, *Users*, *S
 | Transport | **HTTPS forced** on every public route | SEC-04 |
 | Network | NGINX in a docker network; backend only reachable internally | SEC-05 |
 | Pipeline | Security audit on **every CI/CD run** — Snyk (SAST/deps) + OWASP ZAP (DAST) | SEC-07 |
+| Pipeline | **No Cloudflare tokens in GitHub.** GitHub Actions runs checks with `contents: read` and no secrets; deploy credentials stay inside Cloudflare (Workers Builds). Worker secrets (`BETTER_AUTH_SECRET`) are set in Cloudflare, never in the repo or CI logs. | NFR-10, epic #17 |
 
 ## Minors (7–17) and parental oversight
 
@@ -39,4 +40,6 @@ is designed (backlog epic E5), any change that touches user accounts must:
 - No authentication — every `/api/*` route is open. Highest priority security gap.
 - `DELETE /api/quotes/:id` returns `ok` even when nothing was deleted (no 404) and is unauthenticated.
 - No security headers / CSP configured.
-- No CI, so SEC-07 is not enforced.
+- CI is planned (epic #17) but does not include Snyk/ZAP yet, so SEC-07 is not enforced.
+- GitGuardian scans PRs for secrets; synthetic test passwords and UI strings have produced false
+  positives (PR #12), cleared by a human on the GitGuardian dashboard.
