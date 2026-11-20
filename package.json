@@ -9,6 +9,8 @@
     "dev:api": "npm run dev -w api",
     "dev:web": "npm run dev -w web",
     "deploy:api": "npm run migrate -w api && npm run deploy -w api",
-    "deploy:web": "npm run deploy -w web"
+    "deploy:web": "npm run deploy -w web",
+    "test:scripts": "node --test \"scripts/*.test.mjs\"",
+    "smoke": "node scripts/smoke-check.mjs"
   }
 }
