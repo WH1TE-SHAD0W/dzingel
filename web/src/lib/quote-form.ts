@@ -15,6 +15,22 @@ const MSG = {
   serverRejected: "The quote could not be saved. Please check both fields and try again.",
 };
 
+/** SQLite CURRENT_TIMESTAMP ("YYYY-MM-DD HH:MM:SS", UTC) as a readable local date. */
+export function formatDate(raw: string): string {
+  const date = new Date(`${raw.replace(" ", "T")}Z`);
+  return Number.isNaN(date.getTime())
+    ? raw.slice(0, 10)
+    : date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+}
+
+/** "Added by <author> on <date>" as text nodes plus a <time> element. */
+export function addedBy(author: string | null, createdAt: string): (string | HTMLElement)[] {
+  const time = document.createElement("time");
+  time.dateTime = createdAt;
+  time.textContent = formatDate(createdAt);
+  return [`Added by ${author ?? "a former member"} on `, time];
+}
+
 type Field = {
   el: HTMLTextAreaElement;
   counter: HTMLElement;

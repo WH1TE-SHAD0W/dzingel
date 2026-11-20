@@ -1,8 +1,9 @@
 // Quote list for the selected group. The group comes from the top panel (onGroupChange).
-// Adding a quote happens on /quotes/new. Edit/delete still use the browser dialogs (#10).
+// Adding a quote happens on /quotes/new; editing and deleting on /quotes/edit?id=.
 import { api, genericMessage, type Group, type Quote } from "./lib/api";
 import { onGroupChange, redirectIfUnauthorized } from "./lib/app";
 import { byId } from "./lib/form";
+import { addedBy } from "./lib/quote-form";
 
 const list = byId<HTMLUListElement>("list");
 const search = byId<HTMLInputElement>("search");
@@ -41,14 +42,6 @@ async function loadQuotes(): Promise<void> {
   }
 }
 
-/** SQLite CURRENT_TIMESTAMP ("YYYY-MM-DD HH:MM:SS", UTC) as a readable local date. */
-function formatDate(raw: string): string {
-  const date = new Date(`${raw.replace(" ", "T")}Z`);
-  return Number.isNaN(date.getTime())
-    ? raw.slice(0, 10)
-    : date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
-}
-
 function paragraph(className: string, text: string): HTMLParagraphElement {
   const p = document.createElement("p");
   p.className = className;
@@ -60,33 +53,16 @@ function quoteItem(quote: Quote): HTMLLIElement {
   const li = document.createElement("li");
   const text = paragraph("quote-text", `“${quote.text}”`);
   text.id = `quote-${quote.id}-text`;
-  const time = document.createElement("time");
-  time.dateTime = quote.created_at;
-  time.textContent = formatDate(quote.created_at);
-  const meta = paragraph("quote-meta", `Added by ${quote.author ?? "a former member"} on `);
-  meta.append(time);
-  const edit = document.createElement("button");
-  edit.className = "btn btn-secondary";
-  edit.textContent = "Edit";
-  edit.onclick = async () => {
-    const t = prompt("Quote", quote.text);
-    if (!t) return;
-    const c = prompt("Context", quote.context) ?? quote.context;
-    await api(`/quotes/${quote.id}`, "PUT", { text: t, context: c }).catch(fail);
-    loadQuotes();
-  };
-  const del = document.createElement("button");
-  del.className = "btn btn-secondary";
-  del.textContent = "Delete";
-  del.onclick = async () => {
-    if (confirm("Delete?")) {
-      await api(`/quotes/${quote.id}`, "DELETE").catch(fail);
-      loadQuotes();
-    }
-  };
   li.append(text);
   if (quote.context.trim()) li.append(paragraph("quote-context", quote.context));
-  li.append(meta, edit, " ", del);
+  const meta = paragraph("quote-meta", "");
+  meta.append(...addedBy(quote.author, quote.created_at));
+  const edit = document.createElement("a");
+  edit.className = "btn btn-secondary";
+  edit.href = `/quotes/edit?id=${quote.id}`;
+  edit.textContent = "Edit";
+  edit.setAttribute("aria-describedby", text.id); // which quote, for screen readers
+  li.append(meta, edit);
   return li;
 }
 
