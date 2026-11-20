@@ -10,7 +10,8 @@ disable-model-invocation: true
 1. `git log --oneline main..HEAD` and `git diff main...HEAD --stat`, then read the diff.
 2. Fetch the issue (`$ARGUMENTS` or from commits/branch):
    `gh issue view N --json title,body,comments`.
-3. Fill `.github/pull_request_template.md` and keep it short:
+3. Fill [template.md](template.md) (same as `.github/pull_request_template.md`, which GitHub
+   uses in its web UI; keep the two in sync) and keep it short:
    - **What:** 1–2 sentences. One `Closes #N` line per issue.
    - **Tests:** the actual summary line from `npm test` (run it; never guess).
    - **Checklist:** tick only what you verified.
