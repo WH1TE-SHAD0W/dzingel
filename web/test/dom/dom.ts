@@ -4,7 +4,7 @@
 import { afterEach, expect, inject, vi } from "vitest";
 import type { PageName } from "./render-pages";
 
-export type ApiReply = [status: number, body?: unknown];
+export type ApiReply = readonly [status: number, body?: unknown];
 export type ApiRequest = { method: string; path: string; query: URLSearchParams; body: unknown };
 export type Handler = ApiReply | ((req: ApiRequest) => ApiReply | Promise<ApiReply>);
 
