@@ -11,10 +11,20 @@ idea ──/ticket──▶ issue (status:triage)
                     │ refined: acceptance criteria + labels + milestone
                     ▼
                  status:ready ──/build-feature #N──▶ status:in-progress
-                    │  developer → tester → documenter → reviewer
+                    │  developer → tester → documenter → reviewer (APPROVE)
                     ▼
-                 PR "Closes #N" (status:in-review) ──merge──▶ closed
+                 status:in-review ── pr-manager: push + PR "Closes #N"
+                    │
+                    ▼
+                 pr-reviewer: verifies the PR, posts one comment ── flow ends
+                    │
+                    ▼
+                 human merges ──▶ closed
 ```
+
+The flow never merges. `pr-reviewer`'s comment says READY TO MERGE or NEEDS CHANGES; the human
+decides what happens next. PR bodies use `.github/pull_request_template.md` (What / Tests /
+Checklist).
 
 ## Issue types
 
@@ -51,5 +61,6 @@ The `issue-manager` agent can create the missing labels (`github-issues` skill �
 See `CLAUDE.md` → *Agent team*. Entry points:
 
 - `/ticket <idea>` — draft and file an issue through `issue-manager`.
-- `/build-feature <issue#>` — run the full supervised loop for one issue.
+- `/build-feature <issue#>` — run the full supervised loop for one issue, ending with an open PR
+  and a verification comment on it.
 - Ask for a single agent directly: "use the reviewer agent on the current diff".
