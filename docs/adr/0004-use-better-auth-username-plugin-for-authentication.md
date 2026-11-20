@@ -1,6 +1,6 @@
 # 0004. Authenticate with Better Auth's username plugin, behind thin wrappers, with no real email
 
-- **Status:** Accepted
+- **Status:** Accepted (extended by 0007: auth route allowlist and explicit rate limiting)
 - **Date:** 2026-11-20
 - **Source:** WH1TE-SHAD0W/dzingel#2; FR-01, FR-02, SEC-02, SEC-03 in `context/requirements.md`; `api/src/auth.ts`, `api/src/app.ts`
 
@@ -22,8 +22,9 @@ Better Auth: they validate input, map errors to a uniform shape, and re-dispatch
 Better Auth's own router (`auth.handler`) so its CSRF/origin checks and rate limiting still run. The
 raw `/api/auth/sign-up/*` and `/api/auth/sign-in/*` paths answer 404. Register and login accept only
 `Content-Type: application/json`, which a cross-site form cannot send without a CORS preflight; this
-closes login CSRF. The signing secret comes from `BETTER_AUTH_SECRET` and the app refuses to start
-without it.
+closes login CSRF. The signing secret comes from `BETTER_AUTH_SECRET`; it is required: the Node server (`server.ts`) exits at
+startup without it, and the Worker (`worker.ts`) throws "BETTER_AUTH_SECRET is not set" on every
+request.
 
 ## Consequences
 - Easy: no email handling, nothing to leak or verify; session handling, hashing and rate limiting
@@ -34,7 +35,9 @@ without it.
   (`session.ipAddress`, `userAgent` in migration 0002). This is personal data collected by default
   and is **an open privacy question for minors**: whether to disable or minimise it is a human
   decision (`context/security-and-privacy.md`) and has not been made.
-- Better Auth rate limiting (429) is only active in production, so it is not exercised by tests.
+- Rate limiting: this record originally assumed Better Auth's limiter was active in production; that
+  was wrong (it is on only when `NODE_ENV` is `production`, which nothing sets, and Workers do not
+  populate `process.env`). Corrected by ADR 0007, which enables it explicitly.
 - Never re-expose the raw sign-up/sign-in routes, and never relax the JSON-only rule, without
   superseding this record. Cloudflare deployment additionally needs `nodejs_compat` and the secret
   (see `docs/deployment.md`).
@@ -46,7 +49,7 @@ without it.
 Reported by `tester` (re-run by the supervisor): API "Test Files 7 passed (7) / Tests 247 passed
 (247)"; web "Test Files 1 passed (1) / Tests 14 passed (14)". `npm test -w api` now also
 type-checks the test files (`api/tsconfig.test.json`). The Origin requirement on logout is covered
-by `api/test/auth-origin.test.ts`; the production rate limit is not covered. UI criteria are not
+by `api/test/auth-origin.test.ts`; rate limiting was not covered at that time (it is now, see ADR 0007). UI criteria are not
 covered by automated tests.
 
 ## Alternatives considered

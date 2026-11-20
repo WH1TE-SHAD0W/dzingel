@@ -31,9 +31,11 @@ new numbered files.
 
 ## Verification
 Reported by `tester` (re-run by the supervisor): API "Test Files 7 passed (7) / Tests 247 passed
-(247)"; web "Test Files 1 passed (1) / Tests 14 passed (14)". No test is named by the supervisor as
-covering the migration runner directly; the API suite builds its databases through `nodeDb`, so it
-exercises migrations 0001-0004 being applied in order.
+(247)"; web "Test Files 1 passed (1) / Tests 14 passed (14)". The migration runner is covered directly by
+`api/test/auth.test.ts` (it uses a shared in-memory database, no temporary file); the rest of the
+API suite also builds its databases through `nodeDb`, so it exercises migrations 0001-0004 being
+applied in order. The counts above are from an earlier run; the latest figures reported by `tester`
+are in ADR 0007.
 
 ## Alternatives considered
 - **Keep executing only `0001` and extend by hand:** rejected - every schema ticket would need adapter edits and
