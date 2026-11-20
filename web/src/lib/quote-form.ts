@@ -8,12 +8,22 @@ export const CONTEXT_MAX = 2000;
 /** From this many characters left, counter changes are announced to screen readers. */
 const ANNOUNCE_LEFT = 50;
 
-const MSG = {
+export const QUOTE_MSG = {
   textEmpty: "Please type the quote.",
   textLong: `The quote is too long. Use at most ${TEXT_MAX} characters.`,
   contextLong: `The context is too long. Use at most ${CONTEXT_MAX} characters.`,
   serverRejected: "The quote could not be saved. Please check both fields and try again.",
 };
+
+/** Quote text rule, as the API: non-blank after trimming, raw length within the limit. */
+export function checkQuoteText(value: string): string {
+  return !value.trim() ? QUOTE_MSG.textEmpty : value.length > TEXT_MAX ? QUOTE_MSG.textLong : "";
+}
+
+/** Quote context rule: optional, at most CONTEXT_MAX characters. */
+export function checkQuoteContext(value: string): string {
+  return value.length > CONTEXT_MAX ? QUOTE_MSG.contextLong : "";
+}
 
 /** SQLite CURRENT_TIMESTAMP ("YYYY-MM-DD HH:MM:SS", UTC) as a readable local date. */
 export function formatDate(raw: string): string {
@@ -56,15 +66,13 @@ export function setupQuoteFields(formError: HTMLElement): QuoteFields {
       el: text,
       counter: byId("quote-text-count"),
       max: TEXT_MAX,
-      // Same rule as the API: non-blank after trimming, raw length within the limit.
-      check: () =>
-        !text.value.trim() ? MSG.textEmpty : text.value.length > TEXT_MAX ? MSG.textLong : "",
+      check: () => checkQuoteText(text.value),
     },
     {
       el: context,
       counter: byId("quote-context-count"),
       max: CONTEXT_MAX,
-      check: () => (context.value.length > CONTEXT_MAX ? MSG.contextLong : ""),
+      check: () => checkQuoteContext(context.value),
     },
   ];
 
@@ -110,7 +118,7 @@ export function setupQuoteFields(formError: HTMLElement): QuoteFields {
       return false;
     },
     serverRejected() {
-      setFormError(formError, MSG.serverRejected);
+      setFormError(formError, QUOTE_MSG.serverRejected);
       text.focus();
     },
   };

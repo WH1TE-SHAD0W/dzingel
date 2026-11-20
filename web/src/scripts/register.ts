@@ -1,23 +1,8 @@
 import { genericMessage, isStatus, redirectIfLoggedIn, register } from "../lib/api";
 import { byId, setFieldError, setFormError, startBusy } from "../lib/form";
+import { checkConfirm, checkPassword, checkUsername, REGISTER_MSG as MSG } from "../lib/validation";
 
 redirectIfLoggedIn();
-
-// Mirrors the API rules (api/src/auth.ts); the server still validates everything.
-const USERNAME_RE = /^[a-z0-9_.]{3,30}$/;
-const PASSWORD_MIN = 8;
-const PASSWORD_MAX = 128;
-
-const MSG = {
-  usernameEmpty: "Please choose a username.",
-  usernameRule:
-    "Use 3 to 30 characters: lowercase letters a–z, numbers 0–9, underscore (_) or dot (.).",
-  usernameTaken: "This username is already taken. Please try another one.",
-  passwordEmpty: "Please choose a password.",
-  passwordRule: `Use between ${PASSWORD_MIN} and ${PASSWORD_MAX} characters.`,
-  confirmEmpty: "Please type your password again.",
-  mismatch: "The two passwords do not match.",
-};
 
 const form = byId<HTMLFormElement>("register-form");
 const username = byId<HTMLInputElement>("reg-username");
@@ -27,16 +12,9 @@ const submit = byId<HTMLButtonElement>("register-submit");
 const error = byId<HTMLElement>("register-error");
 
 const validators: [HTMLInputElement, () => string][] = [
-  [username, () => {
-    const v = username.value.trim();
-    return !v ? MSG.usernameEmpty : USERNAME_RE.test(v) ? "" : MSG.usernameRule;
-  }],
-  [password, () => {
-    const n = password.value.length;
-    return n === 0 ? MSG.passwordEmpty : n < PASSWORD_MIN || n > PASSWORD_MAX ? MSG.passwordRule : "";
-  }],
-  [confirm, () =>
-    !confirm.value ? MSG.confirmEmpty : confirm.value !== password.value ? MSG.mismatch : ""],
+  [username, () => checkUsername(username.value)],
+  [password, () => checkPassword(password.value)],
+  [confirm, () => checkConfirm(confirm.value, password.value)],
 ];
 
 /** Validate all fields; show inline errors and return the first invalid input, if any. */
