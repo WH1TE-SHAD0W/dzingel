@@ -10,6 +10,8 @@
 
 ```
 package.json          npm workspaces: api, web
+scripts/              root Node scripts: smoke-check.mjs, with tests for it and for the CI config
+.github/workflows/    ci.yml (checks), smoke.yml (scheduled smoke check)
 api/                  Hono API (TypeScript)
   src/app.ts          createApp(db, auth) — all routes
   src/auth.ts         createAuth() — Better Auth with the username plugin
@@ -56,10 +58,16 @@ Environment variables for the API:
 
 ```powershell
 npm run typecheck -w api
-npm run typecheck -w web    # astro check — needs @astrojs/check installed
+npm run typecheck -w web    # astro check (@astrojs/check is installed; runs in CI)
 npm test -w api             # vitest run + typecheck of the test files
 npm test -w web             # vitest run, including DOM tests (happy-dom, Astro container)
+npm run test:scripts        # node --test "scripts/*.test.mjs": smoke check, CI/wrangler config
+npm run smoke -- https://your-site.example   # read-only smoke check (or set PUBLIC_URL)
 ```
+
+CI (`.github/workflows/ci.yml`) runs these checks plus the web build on every PR and push to `main`;
+see `docs/deployment.md`. The smoke check exits 0 on pass, 1 on a failed check or network error and
+2 on a missing or invalid URL.
 
 **API tests** (`api/test/`, Vitest) build their own app per test with an in-memory database, so no
 state is shared. `npm test -w api` also type-checks the test files through `api/tsconfig.test.json`;

@@ -22,6 +22,10 @@ idea ──/ticket──▶ issue (status:triage)
                  human merges ──▶ closed
 ```
 
+GitHub Actions (`CI`, `.github/workflows/ci.yml`) runs on every PR and on pushes to `main`. It only
+checks. Deployment is done by Cloudflare Workers Builds after merge (`docs/deployment.md`, ADR 0008).
+Workers Builds does not wait for CI, so `CI` should be a required check on `main` (human step).
+
 The flow never merges. `pr-reviewer`'s comment says READY TO MERGE or NEEDS CHANGES; the human
 decides what happens next. PR bodies use `.github/pull_request_template.md` (What / Tests /
 Checklist).
@@ -50,7 +54,8 @@ The `issue-manager` agent can create the missing labels (`github-issues` skill �
 ## Definition of done (checked by `reviewer`)
 
 1. Every acceptance criterion of the issue is met and covered by at least one test.
-2. `npm run typecheck -w api` passes; tests pass (once Vitest exists).
+2. Typechecks and tests pass, as checked by the `CI` check on the PR (api and web typecheck, api
+   and web tests, web build, `npm run test:scripts`).
 3. Both DB adapters (`node-db.ts`, `d1-db.ts`) still work for any schema/query change.
 4. No quote text/context in logs; synthetic data only in tests.
 5. `docs/` updated; ADR written for any decision that constrains future work.
