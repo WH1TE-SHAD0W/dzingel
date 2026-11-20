@@ -28,9 +28,17 @@ export type Invite = {
 };
 export type User = { id: string; username: string; cookie: string };
 
-/** Build an app on the given DB (default: fresh `:memory:`). */
-export function makeApp(db: NodeDb = nodeDb(":memory:")): { app: App; db: NodeDb } {
-  return { app: createApp(db, createAuth(db.sqlite, { secret: TEST_SECRET })), db };
+/**
+ * Build an app on the given DB (default: fresh `:memory:`). Rate limiting is off by default: the
+ * suite creates many sessions per second from one (absent) client IP, and Better Auth's memory
+ * store is shared per process. rate-limit.test.ts turns it on explicitly.
+ */
+export function makeApp(
+  db: NodeDb = nodeDb(":memory:"),
+  opts: { rateLimit?: boolean } = {},
+): { app: App; db: NodeDb } {
+  const auth = createAuth(db.sqlite, { secret: TEST_SECRET, rateLimit: opts.rateLimit ?? false });
+  return { app: createApp(db, auth), db };
 }
 
 /** `name=value` pairs of every Set-Cookie header, joined for a Cookie request header. */
@@ -52,7 +60,10 @@ export interface Harness {
   ): Promise<Response>;
   /** POST /api/auth/register; asserts 201 and returns the user with its session cookie. */
   register(username: string, password?: string): Promise<User>;
-  /** Authenticated client bound to a user's cookie. */
+  /**
+   * Authenticated client bound to a user's cookie. `post` sends `{}` when no body is given: every
+   * mutating route requires an application/json object body (e.g. invite accept/decline).
+   */
   as(user: User | string): {
     get(path: string): Promise<Response>;
     post(path: string, body?: unknown): Promise<Response>;
@@ -66,8 +77,8 @@ export interface Harness {
   addMember(inviter: User, group: number, invitee: User): Promise<void>;
 }
 
-export function harness(db?: NodeDb): Harness {
-  const { app, db: d } = makeApp(db);
+export function harness(db?: NodeDb, opts: { rateLimit?: boolean } = {}): Harness {
+  const { app, db: d } = makeApp(db, opts);
 
   const req: Harness["req"] = async (method, path, opts = {}) => {
     const headers: Record<string, string> = { "content-type": "application/json", ...opts.headers };
@@ -92,7 +103,7 @@ export function harness(db?: NodeDb): Harness {
     const cookie = typeof user === "string" ? user : user.cookie;
     return {
       get: (path) => req("GET", path, { cookie }),
-      post: (path, body) => req("POST", path, { cookie, body }),
+      post: (path, body = {}) => req("POST", path, { cookie, body }),
       put: (path, body) => req("PUT", path, { cookie, body }),
       del: (path) => req("DELETE", path, { cookie }),
     };
