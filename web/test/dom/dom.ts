@@ -144,11 +144,19 @@ export async function loadPage(
 
 let current: { unmatched: string[] } | null = null;
 
-afterEach(() => {
+// Never let a test reach the real network: happy-dom's own fetch would really request
+// http://localhost:3000. Outside loadPage() (and after a test) fetch rejects like an offline browser.
+const offline = () => Promise.reject(new TypeError("network disabled in tests"));
+globalThis.fetch = offline as typeof fetch;
+
+afterEach(async () => {
+  // Let work a test did not wait for (e.g. the panel's invite count) finish against the stubs.
+  for (let i = 0; i < 5; i++) await settle();
   for (const [type, listener, opts] of added.splice(0)) {
     document.removeEventListener(type, listener, opts as EventListenerOptions);
   }
   vi.unstubAllGlobals();
+  globalThis.fetch = offline as typeof fetch;
   vi.useRealTimers();
   localStorage.clear();
   const leftover = current?.unmatched ?? [];
