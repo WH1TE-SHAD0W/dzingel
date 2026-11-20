@@ -1,8 +1,5 @@
 // #2 Username and password authentication with Better Auth.
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createAuth } from "../src/auth";
 import { migrate, nodeDb } from "../src/node-db";
 import { cookieFrom, harness, ORIGIN, PASSWORD, type Harness } from "./helpers";
@@ -248,8 +245,9 @@ describe("#2 AC4 logout", () => {
     expect(await h.db.all(`SELECT 1 FROM session`)).toEqual([]);
   });
 
-  // The 403 cases for a missing / untrusted Origin live in auth-origin.test.ts: Better Auth
-  // skips its origin check when NODE_ENV=test or TEST is set, which Vitest does by default.
+  // The 403 cases for a missing / untrusted Origin are in auth-allowlist.test.ts (under
+  // NODE_ENV=test, where Better Auth would skip the check unless forced on) and in
+  // auth-origin.test.ts (NODE_ENV=development, as on a server).
 
   it("logging out one session leaves another session of the same user valid", async () => {
     const alex = await h.register("alex.dev");
@@ -366,11 +364,6 @@ describe("#2 raw Better Auth sign-up / sign-in endpoints are blocked", () => {
 });
 
 describe("#2 AC7 migrations are numbered, ordered and idempotent", () => {
-  const tmpDirs: string[] = [];
-  afterEach(() => {
-    for (const d of tmpDirs.splice(0)) rmSync(d, { recursive: true, force: true });
-  });
-
   it("records every api/migrations file in schema_migrations, in order", async () => {
     const rows = await h.db.all<{ name: string }>("SELECT name FROM schema_migrations ORDER BY rowid");
     const names = rows.map((r) => r.name);
@@ -400,19 +393,20 @@ describe("#2 AC7 migrations are numbered, ordered and idempotent", () => {
     expect(await userCount()).toBe(1);
   });
 
-  it("opening nodeDb() twice on the same file is a no-op the second time and keeps data", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "dzingel-test-"));
-    tmpDirs.push(dir);
-    const file = join(dir, "test.sqlite");
+  // No file on disk (rules/tests.md §4): a named shared-cache in-memory database lets a second
+  // nodeDb() connection open the same, already migrated database. It lives while one connection
+  // is open, so `first` is closed only after `second` has opened it.
+  it("opening nodeDb() a second time on an existing database is a no-op and keeps data", async () => {
+    const file = `file:dzingel-reopen-${crypto.randomUUID()}?mode=memory&cache=shared`;
 
     const first = harness(nodeDb(file));
     const alex = await first.register("alex.dev");
     const g = await first.createGroup(alex, "Test Crew");
     await first.createQuote(alex, g.id, "synthetic quote 1");
     const migrations = await first.db.all("SELECT name, applied_at FROM schema_migrations ORDER BY name");
-    first.db.sqlite.close();
 
     const second = harness(nodeDb(file));
+    first.db.sqlite.close();
     expect(await second.db.all("SELECT name, applied_at FROM schema_migrations ORDER BY name")).toEqual(
       migrations,
     );

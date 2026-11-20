@@ -1,6 +1,7 @@
-// #2 AC4 logout CSRF guard. Better Auth disables its origin check when NODE_ENV === "test" or
-// TEST is truthy (both set by Vitest), reading NODE_ENV once at module load. This file resets
-// both before any import so the check behaves as in a deployed server.
+// #2 AC4 logout CSRF guard, under the environment of a deployed server. Better Auth would disable
+// its origin check when NODE_ENV === "test" or TEST is truthy; the app now forces it on, which
+// auth-allowlist.test.ts checks under NODE_ENV=test. This file resets both variables before any
+// import, so the check is also covered as it behaves outside Vitest.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.hoisted(() => {
