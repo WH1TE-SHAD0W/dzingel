@@ -1,38 +1,47 @@
 ---
+import Base from "../layouts/Base.astro";
+import TopPanel from "../components/TopPanel.astro";
 ---
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>džingel</title>
-  </head>
-  <body>
-    <header>
-      <h1>džingel</h1>
-      <select id="group" aria-label="Group"></select>
-      <button id="newGroup">+ group</button>
-    </header>
-    <input id="search" type="search" placeholder="Search…" aria-label="Search" />
-    <form id="form">
-      <input id="text" placeholder="Quote" required maxlength="1000" />
-      <textarea id="context" placeholder="Context: what was the situation?" rows="2"></textarea>
-      <button>Save</button>
-    </form>
-    <ul id="list"></ul>
-    <script>
-      import "../main";
-    </script>
-  </body>
-</html>
+
+<Base title="džingel">
+  <TopPanel slot="header" />
+  <main id="main" data-auth-content hidden>
+    <h1 class="sr-only">Quotes</h1>
+    <p id="app-error" class="alert" role="alert"></p>
+    <p id="no-group" class="notice" hidden>
+      You are not in a group yet. Use “New group” at the top to start one, or open “Invites” to join
+      a group you were invited to.
+    </p>
+    <div id="group-content" hidden>
+      <p class="list-actions">
+        <a class="btn" href="/quotes/new">Add quote</a>
+      </p>
+      <div class="field">
+        <label for="search">Search quotes</label>
+        <input id="search" type="search" maxlength="100" autocomplete="off" />
+      </div>
+      <p id="list-status" class="hint" role="status"></p>
+      <ul id="list" class="quote-list" aria-label="Quotes"></ul>
+    </div>
+  </main>
+  <script>
+    import "../main";
+  </script>
+</Base>
 
 <style is:global>
-  body { font: 18px/1.5 system-ui, sans-serif; max-width: 40rem; margin: 0 auto; padding: 1rem; }
-  header { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
-  h1 { margin: 0 auto 0 0; }
-  input, textarea, select, button { font: inherit; padding: .4rem; }
-  #search { width: 100%; margin-top: 1rem; box-sizing: border-box; }
-  form { display: grid; gap: .5rem; margin: 1rem 0; }
-  ul { padding: 0; list-style: none; }
-  li { margin: .8rem 0; }
-  small { color: #666; display: block; }
+  /* Global (not scoped) because list items are created by the script. */
+  .list-actions { margin: 0.5rem 0 1.25rem; }
+  .list-actions .btn { font-size: 1.1rem; padding: 0.6rem 1.4rem; }
+  .quote-list { padding: 0; list-style: none; }
+  .quote-list li {
+    margin: 0 0 0.8rem;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .quote-list p { margin: 0 0 0.5rem; overflow-wrap: anywhere; white-space: pre-line; }
+  .quote-list .quote-text { font-size: 1.1rem; font-weight: 600; }
+  .quote-list .quote-meta { color: var(--muted); font-size: 0.95rem; }
 </style>

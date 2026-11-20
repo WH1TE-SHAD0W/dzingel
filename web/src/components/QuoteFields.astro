@@ -1,0 +1,33 @@
+---
+// Quote text + context fields shared by the add and edit pages. Behaviour (live counters,
+// validation) lives in lib/quote-form.ts; limits mirror the API (text 1–1000, context ≤ 2000).
+---
+
+<div class="field">
+  <label for="quote-text">Quote</label>
+  <p id="quote-text-hint" class="hint">What was said, word for word. Required.</p>
+  <textarea
+    id="quote-text"
+    name="text"
+    rows="3"
+    required
+    maxlength="1000"
+    autocomplete="off"
+    aria-describedby="quote-text-hint quote-text-count quote-text-error"></textarea>
+  <p id="quote-text-count" class="hint" aria-live="off">0 of 1000 characters used</p>
+  <p id="quote-text-error" class="field-error"></p>
+</div>
+
+<div class="field">
+  <label for="quote-context">Context (optional)</label>
+  <p id="quote-context-hint" class="hint">What was the situation? Who said it, and when?</p>
+  <textarea
+    id="quote-context"
+    name="context"
+    rows="4"
+    maxlength="2000"
+    autocomplete="off"
+    aria-describedby="quote-context-hint quote-context-count quote-context-error"></textarea>
+  <p id="quote-context-count" class="hint" aria-live="off">0 of 2000 characters used</p>
+  <p id="quote-context-error" class="field-error"></p>
+</div>

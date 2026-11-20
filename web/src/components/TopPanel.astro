@@ -1,0 +1,207 @@
+---
+// Top panel for every app page: title, current user, group switcher, new group, invite someone,
+// pending invites and logout. Behaviour lives in scripts/top-panel.ts; pages listen for the
+// selected group through lib/app.ts (onGroupChange).
+---
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-row">
+      <a class="topbar-brand" href="/">džingel</a>
+      <p class="topbar-user" data-auth-content hidden>
+        <span class="topbar-user-label">Signed in as</span>
+        <strong id="tp-username"></strong>
+      </p>
+      <button id="tp-logout" type="button" class="btn btn-secondary" data-auth-content hidden>
+        Log out
+      </button>
+    </div>
+
+    <p id="tp-loading" class="hint" role="status">Loading…</p>
+
+    <div class="topbar-row topbar-tools" role="group" aria-label="Groups and invites" data-auth-content hidden>
+      <div class="topbar-group">
+        <label for="tp-group">Group</label>
+        <select id="tp-group"></select>
+      </div>
+      <button id="tp-new-group" type="button" class="btn btn-secondary" aria-haspopup="dialog">
+        New group
+      </button>
+      <button id="tp-invite-user" type="button" class="btn btn-secondary" aria-haspopup="dialog">
+        Invite someone
+      </button>
+      <button id="tp-invites" type="button" class="btn btn-secondary" aria-haspopup="dialog">
+        Invites <span id="tp-invite-count" class="badge">0</span><span class="sr-only">&nbsp;pending</span>
+      </button>
+    </div>
+
+    <p id="tp-status" class="status" role="status"></p>
+    <p id="tp-error" class="alert" role="alert"></p>
+  </div>
+</header>
+
+<dialog id="tp-new-group-dialog" class="dialog" aria-labelledby="tp-new-group-title">
+  <form id="tp-new-group-form" novalidate>
+    <h2 id="tp-new-group-title">New group</h2>
+    <div class="field">
+      <label for="tp-group-name">Group name</label>
+      <input
+        id="tp-group-name"
+        type="text"
+        required
+        maxlength="100"
+        autocomplete="off"
+        autofocus
+        aria-describedby="tp-group-name-error"
+      />
+      <p id="tp-group-name-error" class="field-error"></p>
+    </div>
+    <div class="dialog-actions">
+      <button id="tp-new-group-submit" type="submit" class="btn">Create group</button>
+      <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="tp-invite-dialog" class="dialog" aria-labelledby="tp-invite-title">
+  <div class="dialog-head">
+    <h2 id="tp-invite-title">Invite to <span id="tp-invite-group"></span></h2>
+    <button type="button" class="btn btn-secondary" data-close>Close</button>
+  </div>
+  <div class="field">
+    <label for="tp-user-search">Search for a username</label>
+    <p id="tp-user-search-hint" class="hint">Type part of the username of the person to invite.</p>
+    <input
+      id="tp-user-search"
+      type="search"
+      maxlength="30"
+      autocomplete="off"
+      autocapitalize="none"
+      spellcheck="false"
+      autofocus
+      aria-describedby="tp-user-search-hint"
+      aria-controls="tp-user-results"
+    />
+  </div>
+  <p id="tp-user-results-status" class="hint" role="status"></p>
+  <ul id="tp-user-results" class="dialog-list" aria-label="Matching usernames"></ul>
+  <p id="tp-invite-error" class="alert" role="alert"></p>
+  <p id="tp-invite-status" class="status" role="status"></p>
+</dialog>
+
+<dialog id="tp-invites-dialog" class="dialog" aria-labelledby="tp-invites-title">
+  <div class="dialog-head">
+    <h2 id="tp-invites-title">Your invites</h2>
+    <button id="tp-invites-close" type="button" class="btn btn-secondary" data-close>Close</button>
+  </div>
+  <p id="tp-invites-empty" class="hint">You have no pending invites.</p>
+  <ul id="tp-invites-list" class="dialog-list" aria-label="Pending invites"></ul>
+  <p id="tp-invites-error" class="alert" role="alert"></p>
+  <p id="tp-invites-status" class="status" role="status"></p>
+</dialog>
+
+<script>
+  import "../scripts/top-panel";
+</script>
+
+<style is:global>
+  /* Global (not scoped) because list items are created by the script. */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+  }
+  .topbar-inner {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: 0.75rem 1rem;
+    display: grid;
+    gap: 0.6rem;
+  }
+  .topbar-inner > p { margin: 0; }
+  .topbar-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 0.75rem;
+  }
+  .topbar-brand {
+    margin-right: auto;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .topbar-brand:hover { color: var(--primary); }
+  .topbar-user { margin: 0; }
+  .topbar-user-label { color: var(--muted); }
+  .topbar-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1 1 14rem;
+  }
+  .topbar-group select { flex: 1; min-width: 0; }
+
+  .badge {
+    display: inline-block;
+    min-width: 1.6em;
+    padding: 0 0.45em;
+    border-radius: 999px;
+    background: #e7e5df;
+    color: var(--text);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    text-align: center;
+  }
+  .has-invites .badge {
+    background: var(--error);
+    color: #fff;
+  }
+
+  .dialog {
+    width: min(32rem, calc(100vw - 2rem));
+    max-height: calc(100vh - 2rem);
+    padding: 1.5rem;
+    border: 1px solid var(--line);
+    border-radius: calc(var(--radius) * 1.5);
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 10px 40px rgb(0 0 0 / 0.25);
+  }
+  .dialog::backdrop { background: rgb(0 0 0 / 0.45); }
+  .dialog-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .dialog-head h2 { margin: 0; overflow-wrap: anywhere; }
+  .dialog-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+  .dialog > p,
+  .dialog-list { margin: 0 0 1rem; }
+  .dialog > p:last-child { margin-bottom: 0; }
+  .dialog-list {
+    list-style: none;
+    padding: 0;
+  }
+  .dialog-list:empty { display: none; }
+  .dialog-list li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    padding: 0.75rem 0;
+    border-top: 1px solid var(--line);
+  }
+  .dialog-list li:last-child { border-bottom: 1px solid var(--line); }
+  .dialog-list li > p { margin: 0; overflow-wrap: anywhere; }
+  .dialog-list .username { font-weight: 600; overflow-wrap: anywhere; }
+</style>

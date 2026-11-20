@@ -1,0 +1,37 @@
+name: Bug
+description: Something does not work as specified
+title: "<symptom> when <condition>"
+labels: ["type:bug", "status:triage"]
+body:
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. POST /api/quotes with { "group_id": 1, "text": "synthetic quote" }
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
+    validations:
+      required: true
+  - type: dropdown
+    id: runtime
+    attributes:
+      label: Runtime
+      options: ["Self-host (Node + SQLite)", "Cloudflare (Workers + D1)", "Local dev", "Unknown"]
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Acceptance criteria for the fix
+      placeholder: |
+        1. ...
+        2. A regression test covers the reproduction steps
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: "⚠️ Public repository — redact personal data from logs and screenshots."

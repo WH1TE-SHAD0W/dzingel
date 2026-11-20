@@ -1,0 +1,58 @@
+---
+import Base from "../../layouts/Base.astro";
+import TopPanel from "../../components/TopPanel.astro";
+import QuoteFields from "../../components/QuoteFields.astro";
+---
+
+<Base title="Edit quote">
+  <TopPanel slot="header" />
+  <main id="main" data-auth-content hidden>
+    <p><a href="/">← Back to quotes</a></p>
+    <p id="edit-loading" class="hint" role="status">Loading the quote…</p>
+    <p id="edit-load-error" class="alert" role="alert"></p>
+
+    <section id="not-found" class="panel" aria-labelledby="not-found-title" hidden>
+      <h1 id="not-found-title" tabindex="-1">Quote not found</h1>
+      <p>
+        This quote does not exist, has been deleted, or belongs to a group you are not in.
+      </p>
+      <a class="btn" href="/">Back to quotes</a>
+    </section>
+
+    <form id="quote-form" class="panel" novalidate aria-labelledby="quote-title" hidden>
+      <h1 id="quote-title">Edit quote</h1>
+      <p id="quote-meta" class="hint"></p>
+      <p id="quote-error" class="alert" role="alert"></p>
+      <QuoteFields />
+      <div class="form-actions">
+        <button id="quote-submit" class="btn" type="submit">Save changes</button>
+        <a class="btn btn-secondary" href="/">Cancel</a>
+        <button
+          id="quote-delete"
+          class="btn btn-danger delete-trigger"
+          type="button"
+          aria-haspopup="dialog">Delete quote</button>
+      </div>
+    </form>
+  </main>
+
+  <dialog id="delete-dialog" class="dialog" aria-labelledby="delete-title" aria-describedby="delete-desc">
+    <h2 id="delete-title">Delete this quote?</h2>
+    <p id="delete-desc">
+      The quote will be removed for everyone in the group. This cannot be undone.
+    </p>
+    <p id="delete-error" class="alert" role="alert"></p>
+    <div class="dialog-actions">
+      <button id="delete-confirm" type="button" class="btn btn-danger">Yes, delete quote</button>
+      <button id="delete-cancel" type="button" class="btn btn-secondary" autofocus>Keep quote</button>
+    </div>
+  </dialog>
+
+  <script>
+    import "../../scripts/quote-edit";
+  </script>
+</Base>
+
+<style>
+  .delete-trigger { margin-left: auto; }
+</style>

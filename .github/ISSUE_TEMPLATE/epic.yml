@@ -1,0 +1,24 @@
+name: Epic
+description: A larger outcome delivered through several issues
+title: "Epic: <outcome>"
+labels: ["type:epic"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: The outcome, and the requirement IDs it delivers (context/requirements.md).
+    validations:
+      required: true
+  - type: textarea
+    id: issues
+    attributes:
+      label: Issues
+      description: Task list of child issues.
+      placeholder: |
+        - [ ] #
+        - [ ] #
+  - type: textarea
+    id: open-questions
+    attributes:
+      label: Open questions
