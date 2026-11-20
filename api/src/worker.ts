@@ -20,6 +20,9 @@ export default {
       createAuth(env.DB, {
         secret: env.BETTER_AUTH_SECRET ?? "",
         trustedOrigins: env.TRUSTED_ORIGINS?.split(",").map((o) => o.trim()).filter(Boolean),
+        // Set by Cloudflare's edge (a client cannot forge it) and kept on the request the web
+        // worker forwards through the service binding. Rate-limit storage is per isolate.
+        ipAddressHeaders: ["cf-connecting-ip"],
       }),
     );
     return app.fetch(req);

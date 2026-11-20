@@ -12,6 +12,17 @@ export interface AuthOptions {
   secret: string;
   /** Extra origins allowed to call auth endpoints (e.g. the Astro dev server on :4321). */
   trustedOrigins?: string[];
+  /**
+   * Rate limiting of Better Auth's endpoints (sign-up/sign-in: 3 per 10 s per client IP; others:
+   * 100 per 10 s). Default `true`. Turn off only in tests that create many sessions quickly.
+   */
+  rateLimit?: boolean;
+  /**
+   * Request headers holding the client IP, tried in order; used as the rate-limit key. A header
+   * is trusted only if the proxy in front overwrites it, so pick it per deployment. Default
+   * `["x-forwarded-for"]` (self-host behind NGINX: `proxy_set_header X-Forwarded-For $remote_addr`).
+   */
+  ipAddressHeaders?: string[];
 }
 
 export function createAuth(database: BetterAuthOptions["database"], options: AuthOptions) {
@@ -20,6 +31,13 @@ export function createAuth(database: BetterAuthOptions["database"], options: Aut
     database,
     secret: options.secret,
     trustedOrigins: options.trustedOrigins,
+    // Explicit: Better Auth would enable it only when NODE_ENV === "production" at load time,
+    // which nothing sets (and Workers do not populate process.env). Storage is in-memory, i.e.
+    // per Node process / per Workers isolate: a best-effort limit, not a global one.
+    rateLimit: { enabled: options.rateLimit ?? true, storage: "memory" },
+    advanced: {
+      ipAddress: { ipAddressHeaders: options.ipAddressHeaders ?? ["x-forwarded-for"] },
+    },
     emailAndPassword: {
       enabled: true,
       minPasswordLength: PASSWORD_MIN,
