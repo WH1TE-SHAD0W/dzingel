@@ -20,5 +20,5 @@ session rules:
   report). Subagents do not see this conversation.
 - Stop and ask the human when the gather step reports ambiguities, when a step fails three times,
   or when a subagent reports it could not fetch the issue.
-- Finish with the report from step 8 of the workflow. Do not commit or open a PR unless the human
-  then asks (`/git-commit`, `/git-pr-summary`).
+- Finish with the report from step 8 of the workflow. Specialists commit their own slices on the issue
+  branch (`CLAUDE.md` §6). Do not push or open a PR unless the human then asks (`/git-pr-summary`).

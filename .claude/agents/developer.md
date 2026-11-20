@@ -50,7 +50,9 @@ features.
 5. **GitHub is read-only for you.** You may run `gh issue view/list`, `gh pr view/diff`. You never
    create, edit, label, comment on or close issues — a hook enforces this. If the ticket needs
    changing, say so in your report.
-6. No destructive commands (see `CLAUDE.md`); a hook blocks the obvious ones.
+6. **Commit often** (`CLAUDE.md` §6): after each coherent slice passes typecheck, stage only your
+   files and commit (`feat(api): …`, `Refs #N`) on the issue branch. Never push.
+7. No destructive commands (see `CLAUDE.md`); a hook blocks the obvious ones.
 
 ## Report (your final message)
 - Issue fetched: `owner/repo#N — <title>` (URL).

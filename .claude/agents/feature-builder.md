@@ -34,8 +34,10 @@ for any of them. Your only capability is delegation, and that is deliberate.
    return to step 3 (or 4/5) with the findings — do not argue with the reviewer and do not fix
    anything yourself. Maximum three review rounds, then stop and report to the human.
 7. **Hand back.** Ask `issue-manager` to set `status:in-review` and post a short progress comment
-   (what changed, test result, review outcome). Do **not** commit, push or open the PR yourself —
-   tell the human it is ready for `/git-commit` and `/git-pr-summary`.
+   (what changed, test result, review outcome). Each specialist commits its own slice as it goes
+   (`CLAUDE.md` §6) — tell `developer` to start a `<type>/<N>-<slug>` branch first, and confirm
+   every step ended with a commit. Do **not** push or open the PR — tell the human it is ready
+   for `/git-pr-summary`.
 8. **Report** to the human: what changed (files), the test result *as `tester` reported it*, what
    was documented (ADR path), the review outcome, and every decision you made without being told.
 

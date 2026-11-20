@@ -47,7 +47,11 @@ for (const seg of segs) {
         "Report what should change and let the supervisor route it to issue-manager.",
     );
   }
-  if (mode === "readonly") {
+  if (mode === "docs-writer") {
+    if (/^git\s+add\s+(--\s+)?(docs\/\S*\s*)+$/.test(seg)) continue;
+    if (/^git\s+commit\s+(-m\s+("[^"]*"|'[^']*')\s*)+$/.test(seg)) continue;
+  }
+  if (mode === "readonly" || mode === "docs-writer") {
     const s = seg.replace(/\d?>\s*(\/dev\/null|\$null)/gi, "");
     if (/(^|[^>&])>{1,2}(?!&)/.test(s) || /\bOut-File\b|\bSet-Content\b/i.test(seg)) {
       deny("You are a read-only agent: output redirection to files is not allowed.");

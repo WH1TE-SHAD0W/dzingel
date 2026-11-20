@@ -10,7 +10,7 @@ hooks:
     - matcher: "Bash|PowerShell"
       hooks:
         - type: command
-          command: 'node "$CLAUDE_PROJECT_DIR/.claude/hooks/bash-guard.mjs" readonly'
+          command: 'node "$CLAUDE_PROJECT_DIR/.claude/hooks/bash-guard.mjs" docs-writer'
           timeout: 10
 ---
 
@@ -33,7 +33,10 @@ change the thing itself.
 4. **Cite the source.** Every non-obvious constraint records where it came from — the issue, a
    requirement ID in `context/requirements.md`, `proposal.md`, or `CLAUDE.md`. A rule with no cited
    origin gets deleted by the next person who finds it inconvenient.
-5. **Read the ticket yourself.** A Source line citing an issue must come from
+5. **Commit often** (`CLAUDE.md` §6): after each docs update, `git add docs/...` and
+   `git commit -m "docs: …" -m "Refs #N"` (single-line `-m` args; the hook allows only `git add`
+   under `docs/` and `git commit`). Never push.
+6. **Read the ticket yourself.** A Source line citing an issue must come from
    `gh issue view <N>`, not memory. GitHub is read-only for you.
 
 ## Required ADR workflow

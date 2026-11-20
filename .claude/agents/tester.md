@@ -43,6 +43,8 @@ You design and run the automated tests for džingel, hunt for adversarial edge c
 4. **Read the ticket yourself.** `gh issue view <N> --comments`. Write **at least one test per
    acceptance criterion**, with the issue number in the `describe` name (e.g. `describe("#12 …")`).
 5. **GitHub is read-only for you** (hook-enforced). No destructive commands.
+6. **Commit often** (`CLAUDE.md` §6): commit each green test file (`test(api): …`, `Refs #N`),
+   staging only test files. Never push.
 
 ## Adversarial checklist (apply what fits)
 Empty / whitespace-only strings · exactly-at and one-over length limits (name 100, text 1000,

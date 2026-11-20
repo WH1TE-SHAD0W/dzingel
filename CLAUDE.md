@@ -55,6 +55,16 @@ Hono (`api/`) → SQLite (node:sqlite self-host, Cloudflare D1 in the current de
   (`.claude/hooks/block-dangerous-commands.mjs`).
 - If a task appears to need one, stop and explain what you would run and why. The human decides.
 
+## 6. Commit often
+- Commit after **every coherent, verified step**: a route plus its typecheck passing, a test file
+  that is green, a docs update. Don't let a session finish with uncommitted work.
+- Work for an issue happens on a branch `<type>/<N>-<slug>` (e.g. `feat/12-search-all-groups`),
+  never directly on `main`.
+- One logical change per commit, Conventional Commit format, `Refs #N` in the body (`git-commit`
+  skill). Stage only the files you changed — never `git add -A`.
+- Each agent commits its own slice: `developer` code, `tester` tests, `documenter` docs.
+- Never push, force-push, amend a pushed commit or skip hooks without the human asking.
+
 ## Agent team (`.claude/agents/`)
 | Agent | Does | Writes |
 |---|---|---|
