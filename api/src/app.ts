@@ -14,9 +14,6 @@ const toUser = (u: { id: string; username?: string | null }): AuthUser => ({
   username: u.username ?? "",
 });
 
-// Raw Better Auth sign-up/sign-in endpoints are reachable only through the wrappers below.
-const BLOCKED_AUTH_PATH = /^\/api\/auth\/+sign-(up|in)(\/|$)/i;
-
 export function createApp(db: Db, auth: Auth) {
 const app = new Hono<Env>();
 
@@ -122,11 +119,10 @@ app.post("/api/auth/logout", async (c) => {
 
 app.get("/api/auth/me", requireSession, (c) => c.json({ user: c.get("user") }));
 
-// Remaining Better Auth endpoints (get-session, sign-out, change-password, …).
-app.on(["GET", "POST"], "/api/auth/*", (c) =>
-  BLOCKED_AUTH_PATH.test(new URL(c.req.url).pathname)
-    ? c.json({ error: "not found" }, 404)
-    : auth.handler(c.req.raw));
+// Allowlist: only the four wrappers above are public. No raw Better Auth endpoint (get-session,
+// list-sessions, update-user, is-username-available, change-password, sign-up/sign-in, …) is
+// reachable from outside; the wrappers dispatch to Better Auth's router directly via `forward`.
+app.all("/api/auth/*", (c) => c.json({ error: "not found" }, 404));
 
 // Everything else under /api requires a valid session.
 app.use("/api/*", (c, next) =>
