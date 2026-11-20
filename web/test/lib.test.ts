@@ -1,6 +1,6 @@
 // DOM-free parts of the web client (#6-#10): the typed API client and quote-form constants.
-// Page scripts (register.ts, login.ts, quote-*.ts) touch the DOM at import time and are not
-// covered here.
+// Page scripts (register.ts, login.ts, quote-*.ts, top-panel.ts, main.ts) are covered in happy-dom
+// by test/dom/*.test.ts; field rules in test/validation.test.ts.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   api,
