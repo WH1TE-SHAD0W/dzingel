@@ -6,8 +6,9 @@ WH1TE-SHAD0W/dzingel#2 (auth), #3 (membership), #4 (user directory), #5 (invites
 
 ## Conventions
 
-- **Every route needs a valid session except `POST /api/auth/register` and `POST /api/auth/login`.**
-  Without one the answer is `401 { "error": "unauthorized" }` (#2 AC6, #3 AC7, #5 AC6).
+- **Every route needs a valid session except `POST /api/auth/register` and `POST /api/auth/login`**
+  (and `POST /api/auth/logout`, which is handled by Better Auth). Any other `/api/auth/*` path is
+  `404` (see the allowlist below). Without a session the answer is `401 { "error": "unauthorized" }` (#2 AC6, #3 AC7, #5 AC6).
 - **Session cookie.** Set by register/login by Better Auth: `HttpOnly`, `SameSite=Lax`, `Path=/`; it
   gets `Secure` when served over HTTPS. The token is never returned in a response body. The cookie
   is refreshed or cleared on any authenticated request when Better Auth says so.
@@ -56,18 +57,33 @@ protects them instead.
 ### `GET /api/auth/me`
 `200` -> `{ "user": { "id", "username" } }` - `401` without a valid session (#2 AC5).
 
-### Raw Better Auth endpoints
-Other Better Auth routes under `/api/auth/*` (get-session, sign-out, ...) are served by Better Auth
-itself. **`/api/auth/sign-up/*` and `/api/auth/sign-in/*` are blocked: `404 { "error": "not found" }`**
-so account creation and login can only go through the wrappers above (which validate input and
-return the uniform errors). The wrappers re-dispatch to Better Auth's router, so its CSRF checks and
-rate limiting still apply.
+### Other `/api/auth/*` paths (allowlist)
+`/api/auth/*` is an **allowlist**: only `POST register`, `POST login`, `POST logout` and `GET me` are
+served. Every other path and method under it answers `404 { "error": "not found" }`, including
+Better Auth's own endpoints (get-session, list-sessions, update-user, is-username-available,
+change-password, sign-out, `sign-up/*`, `sign-in/*`, ...). Account creation and login can therefore
+only go through the wrappers above, which validate input and return the uniform errors, and the
+session token is never reachable in a response body. The wrappers dispatch to Better Auth's router
+internally, so its CSRF/origin checks and rate limiting still apply. The origin and CSRF checks are
+forced on (`disableOriginCheck: false`, `disableCSRFCheck: false`) regardless of `NODE_ENV` or
+`TEST`. Source: `api/src/app.ts`, `api/src/auth.ts`; ADR 0007; epic #11 review round 1.
 
 ### Rate limiting
-Better Auth's built-in rate limiter is active in production and answers `429`
-(`{ "error": "too many requests" }` from the wrappers). Better Auth enables it by default only when
-`NODE_ENV` is `production`, so the limit itself is not covered by the automated tests. Limits are
-Better Auth's defaults (not configured in this repository).
+Better Auth's rate limiter is **always on** (`rateLimit.enabled` defaults to `true` in `createAuth`;
+only the test harness switches it off) and answers `429` (`{ "error": "too many requests" }` from the
+wrappers). Limits are Better Auth's defaults, not configured here: **3 requests per 10 s per client
+IP per path** for register and login (they dispatch to sign-up/sign-in), 100 per 10 s otherwise.
+
+- **Storage is in memory**: per Node process, or per Workers isolate. It is a best-effort limit, not
+  a global one.
+- **Client IP** comes from `ipAddressHeaders`: Node uses `["x-forwarded-for"]`, the Worker uses
+  `["cf-connecting-ip"]`. The proxy in front must overwrite the header (self-host NGINX:
+  `proxy_set_header X-Forwarded-For $remote_addr;`). If it does not, a client can rotate header
+  values and evade the limit.
+- A missing, multi-value or invalid header puts all such clients into **one shared bucket per
+  path**, so they can lock each other out.
+
+Covered by `api/test/rate-limit.test.ts` (tester).
 
 ## Groups
 
@@ -105,7 +121,7 @@ One quote, same shape as a list item.
 
 ### `POST /api/quotes`
 Body: `{ "group_id": integer, "text": string, "context"?: string }`
-`text` trimmed, 1-1000 chars; `context` truncated to 2000 chars; `created_by` is the caller.
+`text` trimmed, 1-1000 chars; `context` longer than 2000 chars is **silently truncated** to 2000, not rejected; `created_by` is the caller.
 `201` -> `{ "id": 7 }` - `400` invalid input (checked first) - `404` caller not a member of `group_id`.
 
 ### `PUT /api/quotes/:id`
@@ -144,6 +160,9 @@ The caller's pending invites, newest first.
 `200` -> `[{ "id", "group_id", "group_name", "inviter", "created_at" }]` (`inviter` may be `null` if
 that user was deleted).
 
+Accept and decline require `Content-Type: application/json` and a JSON object body (send `{}`);
+anything else is `400`, so a cross-site form cannot answer an invite.
+
 ### `POST /api/invites/:id/accept`
 Makes the caller a member and marks the invite accepted.
 `200` -> `{ "ok": true, "group_id": 1 }`
@@ -151,6 +170,6 @@ Makes the caller a member and marks the invite accepted.
 ### `POST /api/invites/:id/decline`
 Marks the invite declined. `200` -> `{ "ok": true }`
 
-For both: `400` invalid id; `404` if the invite does not exist **or is addressed to someone else**
+For both: `400` invalid id, non-JSON content type or non-object body; `404` if the invite does not exist **or is addressed to someone else**
 (only the invitee can respond); `409` -> `{ "error": "invite already answered" }` if it is no longer
 pending, including when a concurrent request answered it first.

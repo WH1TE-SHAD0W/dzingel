@@ -35,9 +35,23 @@ npm run deploy:web   # astro build + deploy the web worker
    (also run by `npm run deploy:api`). They create the auth tables, `group_members` and
    `group_invites`.
 4. **Recommended:** set `BETTER_AUTH_URL` (the public origin, e.g. `https://dzingel.example`) as a
-   variable so Better Auth builds correct cookie/origin settings. Optionally set `TRUSTED_ORIGINS`
+   variable; `worker.ts` passes it to Better Auth as `baseURL` (as does `server.ts` on Node), so
+   cookie/origin settings are correct. It is optional. Optionally set `TRUSTED_ORIGINS`
    (comma-separated extra origins). Auth requests arrive through the web worker's service binding,
    so confirm the `Origin` header reaches the API unchanged before relying on logout.
+
+### Rate limiting and client IP
+
+Better Auth's rate limiter is always on (register/login: 3 requests per 10 s per IP per path; other
+auth paths 100 per 10 s). Counters are in memory, so on Cloudflare they are **per isolate**, not
+global: a best-effort limit. The client IP is read from `cf-connecting-ip` (`api/src/worker.ts`),
+which Cloudflare's edge sets and the web worker's service-binding request keeps. If that header is
+missing or invalid, all such clients share one bucket per path. Source: `api/src/auth.ts`, ADR 0007.
+
+**Self-host behind NGINX:** the API reads `X-Forwarded-For` (Better Auth default, `server.ts`). NGINX
+must **overwrite** it, not append: `proxy_set_header X-Forwarded-For $remote_addr;`. If it passes a
+client-supplied value through, a client can rotate values and evade the limit. The NGINX config does
+not exist yet (epic E7); it must include this line.
 
 ### Data caveat: existing groups become invisible
 
