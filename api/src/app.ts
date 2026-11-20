@@ -309,10 +309,14 @@ type Invite = { group_id: number; status: string };
 
 const answered = (c: Context<Env>) => c.json({ error: "invite already answered" }, 409);
 
-/** Load an invite addressed to the caller; a Response if it is missing (404) or answered (409). */
+/**
+ * Load an invite addressed to the caller; a Response if the request is invalid (400), the invite
+ * is missing (404) or already answered (409). Like every mutating route, the request must be
+ * `application/json` (an empty `{}` body), so a cross-site form cannot answer an invite.
+ */
 const ownPendingInvite = async (c: Context<Env>): Promise<(Invite & { id: number }) | Response> => {
   const id = parseId(c.req.param("id"));
-  if (id === null) return invalid(c);
+  if (id === null || !(await readJson(c))) return invalid(c);
   const [inv] = await db.all<Invite>(
     "SELECT group_id, status FROM group_invites WHERE id = ? AND invitee_id = ?",
     id, c.get("user").id,
