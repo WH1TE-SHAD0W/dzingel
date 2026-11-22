@@ -34,7 +34,11 @@ PR / push to main ──▶ GitHub Actions "CI" (checks only, no secrets)
 push to main      ──▶ Cloudflare Workers Builds: dzingel-api  (migrate, then deploy)
                   ──▶ Cloudflare Workers Builds: dzingel      (astro build, then deploy)
 daily / manual    ──▶ GitHub Actions "Smoke" (read-only GET checks of the public site)
+PR / push to main ──▶ GitHub Actions "Perf" (Locust against a local temp-SQLite API, non-blocking, #21)
 ```
+
+"Perf" (`.github/workflows/perf.yml`) holds no secrets, never touches Cloudflare or the live site;
+see `docs/performance.md`.
 
 - **GitHub Actions only checks.** It holds no Cloudflare credentials and has no deploy step
   (`.github/workflows/ci.yml`, `smoke.yml`; both use `permissions: contents: read`).

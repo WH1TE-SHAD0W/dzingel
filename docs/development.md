@@ -11,7 +11,8 @@
 ```
 package.json          npm workspaces: api, web
 scripts/              root Node scripts: smoke-check.mjs, with tests for it and for the CI config
-.github/workflows/    ci.yml (checks), smoke.yml (scheduled smoke check)
+.github/workflows/    ci.yml (checks), smoke.yml (scheduled smoke check), perf.yml (Locust, non-blocking)
+perf/                 locustfile.py, summarize.py: load test and gate (see docs/performance.md)
 api/                  Hono API (TypeScript)
   src/app.ts          createApp(db, auth) — all routes
   src/auth.ts         createAuth() — Better Auth with the username plugin
