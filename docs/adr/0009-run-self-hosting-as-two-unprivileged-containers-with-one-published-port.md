@@ -45,9 +45,9 @@ default `combined` format; fixed in commit eb7ff6a.
 
 ## Verification
 Reported by `tester` (the documenter ran nothing):
-- `npm run test:scripts`: `ℹ tests 112`, `ℹ pass 112`, `ℹ fail 0`; 39 are new static tests in
-  `scripts/docker-compose-config.test.mjs` (35 plus 4 asserting the access log format omits query
-  strings and IPs, commit c04cefb).
+- `npm run test:scripts`: `ℹ tests 112`, `ℹ pass 112`, `ℹ fail 0`; the new static tests are in
+  `scripts/docker-compose-config.test.mjs`: 31 tests in 8 suites (39 by node's counter, which also
+  counts suites).
 - Docker 29.6.2 / Compose v5.3.1: both containers healthy; register, login, group and quote through
   NGINX worked; `api` has no published port (`PortBindings={}`); `id -u` 1000 (api) and 101 (web);
   Node v24; a missing secret makes compose refuse naming the variable; a forged `X-Forwarded-For`
