@@ -257,3 +257,19 @@ describe("#14 AC1 api/wrangler.jsonc", () => {
     assert.equal(cfg.d1_databases[0].binding, "DB");
   });
 });
+
+describe("#22 AC3 no Snyk token in workflows", () => {
+  /** All files under a directory, recursively (mirrors `grep -r`). */
+  function filesUnder(dir) {
+    return readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory() ? filesUnder(`${dir}/${e.name}`) : [`${dir}/${e.name}`],
+    );
+  }
+
+  it("#22 AC3: no file under .github/workflows mentions SNYK_TOKEN (case-insensitive, comments count)", () => {
+    const files = filesUnder(".github/workflows");
+    assert.ok(files.length > 0, "no workflow files found");
+    const hits = files.filter((f) => /SNYK_TOKEN/i.test(read(f)));
+    assert.deepEqual(hits, [], `SNYK_TOKEN referenced in: ${hits.join(", ")}`);
+  });
+});
