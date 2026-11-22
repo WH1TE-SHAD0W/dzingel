@@ -1,0 +1,41 @@
+# Self-hosting: `cp .env.example .env`, set BETTER_AUTH_SECRET, then `docker compose up --build`.
+services:
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    restart: unless-stopped
+    environment:
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is not set - copy .env.example to .env and set it (at least 32 random characters)}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:8080}
+      TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-http://localhost:8080}
+      DB_FILE: /data/dzingel.sqlite
+    volumes:
+      - dzingel-data:/data
+    # No "ports": the API is reachable only from the web container on the compose network.
+    healthcheck:
+      # Any HTTP response means the server is up (no dedicated health route).
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/api/auth/me').then(()=>process.exit(0),()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  dzingel-data:
