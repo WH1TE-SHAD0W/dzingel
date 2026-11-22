@@ -8,6 +8,7 @@ today* and the record of decisions. The `documenter` agent owns this folder.
 | [development.md](development.md) | Local setup, workspace layout, scripts |
 | [api.md](api.md) | HTTP API reference (generated from `api/src/app.ts`) |
 | [deployment.md](deployment.md) | Self-host (target) and Cloudflare (current) deployment |
+| [performance.md](performance.md) | Locust load test, gates, local run, baseline vs NFR-01..03 |
 | [workflow.md](workflow.md) | GitHub Issues → agents → PR workflow, labels, definition of done |
 | [adr/](adr/) | Architecture Decision Records (`NNNN-decision-as-statement.md`) |
 
