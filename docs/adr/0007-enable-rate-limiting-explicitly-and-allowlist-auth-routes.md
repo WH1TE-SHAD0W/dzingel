@@ -30,8 +30,8 @@ runtimes (optional). Invite accept/decline also require `application/json` with 
 - Hard / annoying: the store is in memory, so the limit is per Node process or per Workers isolate,
   best effort and not global, and resets on restart.
 - NGINX must overwrite the header: `proxy_set_header X-Forwarded-For $remote_addr;`. If it passes a
-  client value through, a client can rotate values and evade the limit. The NGINX config does not yet
-  exist (epic E7) and must include this line (`docs/deployment.md`).
+  client value through, a client can rotate values and evade the limit. The NGINX config
+  (`web/nginx.conf`, added in #20) includes this line (`docs/self-hosting.md`).
 - A missing, multi-value or invalid IP header puts all such clients into one shared bucket per path,
   so they can lock each other out.
 - Adding a new auth endpoint means adding an explicit route in `app.ts`; do not widen the catch-all

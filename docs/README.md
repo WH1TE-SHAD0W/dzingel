@@ -8,6 +8,7 @@ today* and the record of decisions. The `documenter` agent owns this folder.
 | [development.md](development.md) | Local setup, workspace layout, scripts |
 | [api.md](api.md) | HTTP API reference (generated from `api/src/app.ts`) |
 | [deployment.md](deployment.md) | Self-host (target) and Cloudflare (current) deployment |
+| [self-hosting.md](self-hosting.md) | docker-compose self-hosting: env, proxy header, backup, TLS guidance |
 | [workflow.md](workflow.md) | GitHub Issues → agents → PR workflow, labels, definition of done |
 | [adr/](adr/) | Architecture Decision Records (`NNNN-decision-as-statement.md`) |
 

@@ -1,15 +1,14 @@
 # Deployment
 
-## Self-host — primary target (not yet packaged)
+## Self-host — primary target
 
-The proposal's target (`context/architecture.md`): docker-compose with
+Packaged with docker-compose (#20, ADR 0009): `web` (Astro build on NGINX, the only published port,
+proxies `/api/`) and `api` (Node 24 + Hono, SQLite on the named volume `dzingel-data`). Quick start:
+`cp .env.example .env`, set `BETTER_AUTH_SECRET`, `docker compose up --build`.
 
-1. **web** — Astro build served by NGINX; the only exposed container; forces HTTPS; proxies `/api`
-   to the API over an internal docker network.
-2. **api** — Node + Hono (`api/src/server.ts`), SQLite file on a docker volume (`DB_FILE`).
-
-Dockerfiles, NGINX config and `docker-compose.yml` do not exist yet — backlog epic **E7**. Until
-then, a self-hoster can run `npm run dev:api` behind their own reverse proxy and serve `web/dist`.
+Configuration, the NGINX `X-Forwarded-For` requirement, backup/restore and HTTPS guidance are in
+[self-hosting.md](self-hosting.md). The stack serves plain HTTP; TLS termination is documented
+there, not shipped (SEC-04).
 
 ## Cloudflare — current deployment
 
@@ -160,8 +159,8 @@ missing or invalid, all such clients share one bucket per path. Source: `api/src
 
 **Self-host behind NGINX:** the API reads `X-Forwarded-For` (Better Auth default, `server.ts`). NGINX
 must **overwrite** it, not append: `proxy_set_header X-Forwarded-For $remote_addr;`. If it passes a
-client-supplied value through, a client can rotate values and evade the limit. The NGINX config does
-not exist yet (epic E7); it must include this line.
+client-supplied value through, a client can rotate values and evade the limit. The shipped
+`web/nginx.conf` contains this line; see [self-hosting.md](self-hosting.md).
 
 ### Data caveat: existing groups become invisible
 
