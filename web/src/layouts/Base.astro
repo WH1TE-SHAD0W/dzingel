@@ -24,6 +24,12 @@ const { title, variant = "app" } = Astro.props;
       <p class="notice">džingel needs JavaScript turned on to work.</p>
     </noscript>
     <slot />
+    <footer class="site-footer">
+      <nav aria-label="Legal">
+        <a href="/terms">Terms and Conditions</a>
+        <a href="/privacy">Privacy notice</a>
+      </nav>
+    </footer>
   </body>
 </html>
 
@@ -272,6 +278,14 @@ const { title, variant = "app" } = Astro.props;
     margin-top: 1.25rem;
     text-align: center;
   }
+
+  .site-footer {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 1rem 1rem 2rem;
+    text-align: center;
+  }
+  .site-footer nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem 1.5rem; }
 
   /* --- App layout --------------------------------------------------------------------------- */
 

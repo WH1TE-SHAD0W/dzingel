@@ -73,8 +73,8 @@ export function genericMessage(err: unknown): string {
 export const getMe = () => api<{ user: User }>("/auth/me").then((r) => r.user);
 export const login = (username: string, password: string) =>
   api<{ user: User }>("/auth/login", "POST", { username, password }).then((r) => r.user);
-export const register = (username: string, password: string) =>
-  api<{ user: User }>("/auth/register", "POST", { username, password }).then((r) => r.user);
+export const register = (username: string, password: string, acceptTerms: boolean) =>
+  api<{ user: User }>("/auth/register", "POST", { username, password, acceptTerms }).then((r) => r.user);
 export const logout = () => api<{ ok: true }>("/auth/logout", "POST");
 
 /** Send an already-logged-in visitor of /login or /register to the app. */

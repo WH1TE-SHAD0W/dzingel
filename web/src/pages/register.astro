@@ -58,6 +58,24 @@ import Base from "../layouts/Base.astro";
           />
           <p id="reg-confirm-error" class="field-error"></p>
         </div>
+        <div class="field">
+          <div class="check">
+            <input
+              id="reg-terms"
+              name="acceptTerms"
+              type="checkbox"
+              required
+              aria-describedby="reg-terms-hint reg-terms-error"
+            />
+            <label for="reg-terms">
+              I have read and accept the <a href="/terms">Terms</a>
+            </label>
+          </div>
+          <p id="reg-terms-hint" class="hint">
+            Also see the <a href="/privacy">Privacy notice</a> to learn what we keep about you.
+          </p>
+          <p id="reg-terms-error" class="field-error"></p>
+        </div>
         <button id="register-submit" class="btn btn-block" type="submit">Create account</button>
       </form>
       <p class="switch-link">Already have an account? <a href="/login">Log in</a></p>
@@ -67,3 +85,9 @@ import Base from "../layouts/Base.astro";
     import "../scripts/register";
   </script>
 </Base>
+
+<style is:global>
+  .check { display: flex; align-items: flex-start; gap: 0.6rem; }
+  .check input { width: 1.4rem; height: 1.4rem; margin: 0.15rem 0 0; flex: none; }
+  .check label { font-weight: 400; }
+</style>

@@ -15,6 +15,7 @@ export const REGISTER_MSG = {
   passwordRule: `Use between ${PASSWORD_MIN} and ${PASSWORD_MAX} characters.`,
   confirmEmpty: "Please type your password again.",
   mismatch: "The two passwords do not match.",
+  termsRequired: "Please tick the box to accept the Terms.",
 };
 
 /** Username as typed; surrounding whitespace is ignored (the form submits it trimmed). */
