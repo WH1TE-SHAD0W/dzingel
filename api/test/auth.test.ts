@@ -12,7 +12,8 @@ beforeEach(() => {
 const userCount = async () =>
   ((await h.db.all<{ n: number }>(`SELECT COUNT(*) AS n FROM "user"`))[0]).n;
 
-const register = (body: unknown) => h.req("POST", "/api/auth/register", { body });
+const register = (body: Record<string, unknown>) =>
+  h.req("POST", "/api/auth/register", { body: { acceptTerms: true, ...body } });
 const login = (body: unknown) => h.req("POST", "/api/auth/login", { body });
 const logout = (cookie: string, origin: string | null = ORIGIN) =>
   h.req("POST", "/api/auth/logout", {
@@ -119,8 +120,8 @@ describe("#2 AC1 register: creates a user, validates username and password", () 
   });
 
   it.each([
-    ["text/plain content type", "text/plain", JSON.stringify({ username: "alex.dev", password: PASSWORD })],
-    ["form-urlencoded", "application/x-www-form-urlencoded", `username=alex.dev&password=${PASSWORD}`],
+    ["text/plain content type", "text/plain", JSON.stringify({ username: "alex.dev", password: PASSWORD, acceptTerms: true })],
+    ["form-urlencoded", "application/x-www-form-urlencoded", `username=alex.dev&password=${PASSWORD}&acceptTerms=true`],
     ["malformed JSON", "application/json", "{nope"],
     ["JSON null", "application/json", "null"],
     ["no body", "application/json", undefined],

@@ -66,12 +66,15 @@ const requireSession: MiddlewareHandler<Env> = async (c, next) => {
 app.post("/api/auth/register", async (c) => {
   const body = await readJson(c);
   if (!body) return c.json({ error: "invalid input" }, 400);
-  const { username, password } = body;
+  const { username, password, acceptTerms } = body;
   const fields: Record<string, string> = {};
   if (typeof username !== "string" || !USERNAME_RE.test(username))
     fields.username = "must be 3-30 characters of a-z, 0-9, _ or .";
   if (typeof password !== "string" || password.length < PASSWORD_MIN || password.length > PASSWORD_MAX)
     fields.password = `must be ${PASSWORD_MIN}-${PASSWORD_MAX} characters`;
+  // Terms must be explicitly accepted (boolean true); checked before any user is created.
+  // Nothing about the acceptance is stored (see issue #23).
+  if (acceptTerms !== true) fields.acceptTerms = "must be accepted";
   if (Object.keys(fields).length) return c.json({ error: "invalid input", fields }, 400);
 
   // Better Auth requires an email; store an internal non-routable placeholder, never shown.

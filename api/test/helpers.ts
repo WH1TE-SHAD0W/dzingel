@@ -91,7 +91,7 @@ export function harness(db?: NodeDb, opts: { rateLimit?: boolean } = {}): Harnes
   };
 
   const register: Harness["register"] = async (username, password = PASSWORD) => {
-    const res = await req("POST", "/api/auth/register", { body: { username, password } });
+    const res = await req("POST", "/api/auth/register", { body: { username, password, acceptTerms: true } });
     expect(res.status, `register ${username}`).toBe(201);
     const { user } = (await res.json()) as { user: { id: string; username: string } };
     const cookie = cookieFrom(res);

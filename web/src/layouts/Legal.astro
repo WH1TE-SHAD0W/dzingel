@@ -1,0 +1,30 @@
+---
+// Shell for the static Terms and Privacy pages: heading, DRAFT banner, operator details.
+import Base from "./Base.astro";
+import { legal } from "../lib/legal";
+
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+
+<Base title={title} variant="app">
+  <main id="main" class="legal">
+    <h1>{title}</h1>
+    <p class="notice" role="note">
+      <strong>DRAFT.</strong> This text is a placeholder awaiting review by the maintainer and a
+      lawyer. It is not legal advice.
+    </p>
+    <p class="hint">
+      Operated by {legal.operatorName}. Contact: {legal.contact}. Effective: {legal.effective}.
+    </p>
+    <slot />
+    <p><a href="/register">Back to creating an account</a></p>
+  </main>
+</Base>
+
+<style is:global>
+  .legal h2 { margin-top: 1.75rem; }
+  .legal .notice { margin-left: 0; margin-right: 0; }
+</style>

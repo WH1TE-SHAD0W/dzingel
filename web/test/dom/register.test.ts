@@ -15,10 +15,14 @@ const fieldError = (input: HTMLInputElement) => $(`${input.id}-error`).textConte
 const summary = () => $("register-error").textContent ?? "";
 const registerCalls = (calls: { path: string }[]) => calls.filter((c) => c.path === "/auth/register");
 
-function fill(u: string, p: string, c: string): void {
+const terms = () => $<HTMLInputElement>("reg-terms");
+
+/** Fill the form; the Terms box is ticked unless `accept` is false (#23). */
+function fill(u: string, p: string, c: string, accept = true): void {
   type(username(), u);
   type(password(), p);
   type(confirm(), c);
+  terms().checked = accept;
 }
 
 describe("#7 AC1 /register has username, password and confirm password fields, all labelled", () => {
@@ -208,5 +212,87 @@ describe("#7 AC5 a link to the login page is present", () => {
       (a) => a.getAttribute("href") === "/login",
     );
     expect(link?.textContent?.trim()).toBe("Log in");
+  });
+});
+
+describe("#23 AC4 required Terms checkbox on the register form", () => {
+  it("visible label, for/id association, required, linking to /terms", async () => {
+    await loadPage("register", { ...NOT_LOGGED_IN });
+    expect(terms().type).toBe("checkbox");
+    expect(terms().required).toBe(true);
+    expect(labelOf("reg-terms")).toBe("I have read and accept the Terms");
+    const link = document.querySelector<HTMLAnchorElement>('label[for="reg-terms"] a');
+    expect(link?.getAttribute("href")).toBe("/terms");
+    expect(describedBy(terms())).toEqual(["reg-terms-hint", "reg-terms-error"]);
+  });
+
+  it("unticked submit: text error in #reg-terms-error, aria-invalid, focus, no request", async () => {
+    const { api } = await loadPage("register", { ...NOT_LOGGED_IN });
+    fill("alex.dev", PW, PW, false);
+    submit(form());
+    await settle();
+    expect(fieldError(terms())).toBe(REGISTER_MSG.termsRequired);
+    expect(terms().getAttribute("aria-invalid")).toBe("true");
+    expect(document.activeElement).toBe(terms());
+    expect(summary()).toBe("Please fix 1 problem below.");
+    expect(registerCalls(api.calls)).toEqual([]);
+  });
+
+  it("ticking the box clears its error", async () => {
+    await loadPage("register", { ...NOT_LOGGED_IN });
+    fill("alex.dev", PW, PW, false);
+    submit(form());
+    await settle();
+    terms().checked = true;
+    terms().dispatchEvent(new Event("change", { bubbles: true }));
+    expect(fieldError(terms())).toBe("");
+    expect(terms().hasAttribute("aria-invalid")).toBe(false);
+  });
+
+  it("ticked submit sends acceptTerms: true", async () => {
+    const { api } = await loadPage("register", { ...NOT_LOGGED_IN, "POST /auth/register": [201, { user: ALEX }] });
+    fill("alex.dev", PW, PW);
+    submit(form());
+    await expect.poll(() => registerCalls(api.calls).length).toBe(1);
+    expect(registerCalls(api.calls)[0].body).toEqual({ username: "alex.dev", password: PW, acceptTerms: true });
+  });
+
+  it("edge: unticked plus invalid username reports both, focus on the first", async () => {
+    await loadPage("register", { ...NOT_LOGGED_IN });
+    fill("A", PW, PW, false);
+    submit(form());
+    await settle();
+    expect(fieldError(username())).toBe(REGISTER_MSG.usernameRule);
+    expect(fieldError(terms())).toBe(REGISTER_MSG.termsRequired);
+    expect(summary()).toBe("Please fix 2 problems below.");
+    expect(document.activeElement).toBe(username());
+  });
+
+  it("server 400 for acceptTerms shows the page's own text next to the checkbox", async () => {
+    await loadPage("register", {
+      ...NOT_LOGGED_IN,
+      "POST /auth/register": [400, { error: "invalid input", fields: { acceptTerms: "<b>raw</b>" } }],
+    });
+    fill("alex.dev", PW, PW);
+    submit(form());
+    await expect.poll(() => fieldError(terms())).toBe(REGISTER_MSG.termsRequired);
+    expect(document.activeElement).toBe(terms());
+    expect(document.body.innerHTML).not.toContain("<b>raw</b>");
+  });
+});
+
+describe("#23 AC3 register page links to Terms and Privacy", () => {
+  it("links with descriptive text and plain hrefs (keyboard-operable anchors)", async () => {
+    await loadPage("register", { ...NOT_LOGGED_IN });
+    const links = [...document.querySelectorAll<HTMLAnchorElement>("a")];
+    const toTerms = links.filter((a) => a.getAttribute("href") === "/terms");
+    const toPrivacy = links.filter((a) => a.getAttribute("href") === "/privacy");
+    expect(toTerms.length).toBeGreaterThanOrEqual(1);
+    expect(toPrivacy.length).toBeGreaterThanOrEqual(1);
+    for (const a of [...toTerms, ...toPrivacy]) {
+      expect(a.textContent?.trim().length).toBeGreaterThan(3);
+      expect(a.textContent).not.toMatch(/^\s*(click )?here\s*$/i);
+      expect(a.getAttribute("tabindex")).not.toBe("-1");
+    }
   });
 });

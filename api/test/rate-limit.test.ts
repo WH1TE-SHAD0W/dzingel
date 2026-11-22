@@ -21,7 +21,7 @@ const ip = () => `203.0.113.${next++}`;
 
 const register = (from: string, username: string) =>
   h.req("POST", "/api/auth/register", {
-    body: { username, password: PASSWORD },
+    body: { username, password: PASSWORD, acceptTerms: true },
     headers: { "x-forwarded-for": from },
   });
 const login = (from: string, password = PASSWORD, username = "alex.dev") =>

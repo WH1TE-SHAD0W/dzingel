@@ -153,7 +153,7 @@ describe("#7 #9 #10 client verdicts agree with the real API", () => {
   beforeAll(async () => {
     const db = nodeDb(":memory:");
     app = createApp(db, apiAuth.createAuth(db.sqlite, { secret: "test-secret-".padEnd(48, "x"), rateLimit: false }));
-    const res = await req("POST", "/api/auth/register", { username: "alex.dev", password: "synthetic-pass-1" });
+    const res = await req("POST", "/api/auth/register", { username: "alex.dev", password: "synthetic-pass-1", acceptTerms: true });
     expect(res.status).toBe(201);
     cookie = res.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ");
     groupId = ((await (await req("POST", "/api/groups", { name: "Test Crew" })).json()) as { id: number }).id;
@@ -165,7 +165,7 @@ describe("#7 #9 #10 client verdicts agree with the real API", () => {
   ])("username %j: client ok ⇔ API accepts", async (username) => {
     // Each valid username appears once in this file, so the API cannot answer 409 here.
     const clientOk = checkUsername(username) === "";
-    const res = await req("POST", "/api/auth/register", { username, password: "synthetic-pass-1" });
+    const res = await req("POST", "/api/auth/register", { username, password: "synthetic-pass-1", acceptTerms: true });
     expect(res.status).toBe(clientOk ? 201 : 400);
   });
 
@@ -174,7 +174,7 @@ describe("#7 #9 #10 client verdicts agree with the real API", () => {
     ["4 emoji (8 units)", "🎵🎵🎵🎵"], ["3 emoji (6 units)", "🎵🎵🎵"],
   ])("password of %s: client ok ⇔ API accepts", async (_l, password) => {
     const clientOk = checkPassword(password) === "";
-    const res = await req("POST", "/api/auth/register", { username: `pw.check${n++}`, password });
+    const res = await req("POST", "/api/auth/register", { username: `pw.check${n++}`, password, acceptTerms: true });
     expect(res.status).toBe(clientOk ? 201 : 400);
   });
 

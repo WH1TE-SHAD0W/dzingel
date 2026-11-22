@@ -11,6 +11,17 @@ The proposal's target (`context/architecture.md`): docker-compose with
 Dockerfiles, NGINX config and `docker-compose.yml` do not exist yet — backlog epic **E7**. Until
 then, a self-hoster can run `npm run dev:api` behind their own reverse proxy and serve `web/dist`.
 
+### Terms and Privacy configuration (all deployments)
+
+The web build reads `PUBLIC_OPERATOR_NAME`, `PUBLIC_OPERATOR_CONTACT` and `PUBLIC_TERMS_EFFECTIVE`
+at **build time** (`web/src/lib/legal.ts`). They are inlined into the static pages, so they must be
+present in the environment of the step that runs `astro build` (for self-hosting: the docker build
+or the shell running the build; for Cloudflare: the build variables of the `dzingel` Workers Builds
+project, a human step) and a change needs a rebuild. They are public by design (shown on the
+pages), so they are not secrets. If unset, the pages show visible `[... - not set]` placeholders.
+Operators who need different wording edit `web/src/pages/terms.astro` and `privacy.astro`. Details:
+`docs/development.md`. Source: #23, NFR-04.
+
 ## Cloudflare — current deployment
 
 | Worker | Config | Role |
