@@ -89,6 +89,68 @@ visible focus styles and contrast.
 For the test results reported by `tester` for this epic, see the Verification section of the ADRs
 under `docs/adr/`.
 
+## Dependency scanning (Snyk)
+
+Source: #22, SEC-07 (`context/requirements.md`), the "Security - static" row of
+`context/testing-strategy.md`, and the human decision recorded in #22 (2026-11-22).
+
+**Status: the repository does not enforce or verify this.** Snyk is configured in the Snyk app and
+in GitHub by the maintainer, outside the code. Nothing here proves the integration is active; check
+the Snyk app and a PR's checks list.
+
+### Why there is no token
+
+Snyk's native GitHub integration scans the imported repository from Snyk's side and reports back as
+a status check on PRs and commits. No Snyk API token is stored in GitHub, the Actions workflows keep
+`contents: read` and no secrets, and there is no `snyk` CLI step in `ci.yml`. This follows ADR 0008
+("no secrets in GitHub"). `scripts/cicd-config.test.mjs` (run by `npm run test:scripts`) fails if any
+file under `.github/workflows` mentions `SNYK_TOKEN`, comments included. Do not add a Snyk CLI step
+to a workflow without a new ADR superseding that part of 0008.
+
+### What it covers
+
+- Known-vulnerable packages in the dependency manifests and lockfile (`package-lock.json`) of the
+  `api/` and `web/` workspaces, scanned by the native GitHub integration.
+
+### What it does not cover
+
+- Runtime behaviour of the running app.
+- Cloudflare configuration (Workers, D1, bindings, dashboard settings).
+- OWASP ZAP dynamic testing (DAST): a separate, future item (SEC-07 names both tools; only the
+  dependency half is addressed here).
+
+### Reading the PR check
+
+Once enabled, a PR shows a Snyk status check next to `CI`. Green means no new issues above the
+configured thresholds were found. Red or failing means Snyk found new vulnerable dependencies; open
+its "Details" link, which leads to the finding in the Snyk app (package, severity, fixed-in version
+if any).
+
+### Triage
+
+- **Threshold:** high and critical. This matches "No high/critical findings" in
+  `context/testing-strategy.md`; it is the proposed default, not something the repository enforces.
+- **Who fixes:** the maintainer or the author of the PR that introduced or surfaced the finding,
+  usually by upgrading the dependency in a PR. Process otherwise follows `docs/workflow.md`.
+- **Ignoring:** only with a written reason, using the reason field of Snyk's ignore action, so the
+  decision is recorded in Snyk. An ignore without a reason is not acceptable.
+
+### Privacy
+
+Snyk reads the dependency manifests and source of the public repository. It never receives quote
+data: quote `text` and `context` live only in the database, are not in the repo, and are never sent
+to third parties (`context/security-and-privacy.md`, `CLAUDE.md` section 4).
+
+### Maintainer checklist (manual, not done or verified by the repo)
+
+- [ ] Create or sign in to a Snyk account.
+- [ ] Authorise the Snyk GitHub integration and import `WH1TE-SHAD0W/dzingel`.
+- [ ] Confirm the `package-lock.json` scan covers the `api/` and `web/` workspaces.
+- [ ] Enable PR checks (fix/upgrade PRs only if wanted).
+- [ ] Triage the first scan: fix, or ignore with a reason in Snyk.
+- [ ] Optional: make the Snyk check required through branch protection on `main`. This is a human
+  step in repository settings, like making `CI` required (`docs/deployment.md`).
+
 ## Migrations
 
 - Files in `api/migrations/` are numbered `NNNN_description.sql`:
