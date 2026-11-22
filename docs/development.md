@@ -10,7 +10,8 @@
 
 ```
 package.json          npm workspaces: api, web
-scripts/              root Node scripts: smoke-check.mjs, with tests for it and for the CI config
+docker-compose.yml    self-hosting stack (api + web); .env.example holds placeholders; see docs/self-hosting.md
+scripts/              root Node scripts: smoke-check.mjs, with tests for it, the CI config and docker-compose-config.test.mjs
 .github/workflows/    ci.yml (checks), smoke.yml (scheduled smoke check)
 api/                  Hono API (TypeScript)
   src/app.ts          createApp(db, auth) — all routes
@@ -30,6 +31,8 @@ web/                  Astro frontend
   src/main.ts         client script for the quote list (/)
   test/               Vitest web tests (test/dom: DOM tests)
   worker/index.ts     Cloudflare Worker forwarding /api/* to the API worker
+  Dockerfile, nginx.conf   self-hosting web image (NGINX, port 8080)
+api/Dockerfile        self-hosting API image (esbuild bundle of src/server.ts)
 context/              intent distilled from proposal.md
 docs/                 this documentation
 .claude/              Claude Code agents, skills, rules, hooks
