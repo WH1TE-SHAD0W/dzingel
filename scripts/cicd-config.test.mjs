@@ -195,9 +195,9 @@ describe("#13 AC7 pinned actions", () => {
 });
 
 describe("#13 AC9 only one gating workflow", () => {
-  it("#13 AC9: .github/workflows contains only ci.yml and smoke.yml; none deploys", () => {
+  it("#13 AC9: .github/workflows contains only ci.yml, smoke.yml and perf.yml (#21); none deploys", () => {
     const files = readdirSync(join(root, ".github/workflows")).filter((f) => /\.ya?ml$/.test(f)).sort();
-    assert.deepEqual(files, ["ci.yml", "smoke.yml"]);
+    assert.deepEqual(files, ["ci.yml", "perf.yml", "smoke.yml"]);
   });
 
   it("#13 AC9: smoke.yml does not run on pull_request/push (it is not a gate)", () => {
@@ -255,5 +255,62 @@ describe("#14 AC1 api/wrangler.jsonc", () => {
     assert.deepEqual(cfg.compatibility_flags, ["nodejs_compat"]);
     assert.equal(cfg.d1_databases.length, 1);
     assert.equal(cfg.d1_databases[0].binding, "DB");
+  });
+});
+
+describe("#21 perf.yml (Locust, non-blocking)", () => {
+  const perf = stripYamlComments(read(".github/workflows/perf.yml"));
+
+  it("#21 AC6: the job is continue-on-error: true (non-blocking)", () => {
+    assert.match(perf, /^\s{4}continue-on-error:\s*true\s*$/m);
+  });
+
+  it("#21 AC8: top-level permissions: contents: read, no write permission", () => {
+    const perms = topLevelBlock(perf, "permissions");
+    assert.ok(perms, "perf.yml has no top-level permissions:");
+    assert.match(perms, /^\s+contents:\s*read\s*$/m);
+    assert.doesNotMatch(perf, /:\s*write\b/);
+  });
+
+  it("#21 AC8: no secrets references", () => {
+    assert.doesNotMatch(perf, /secrets\./);
+    assert.doesNotMatch(perf, /secrets\[/);
+    assert.doesNotMatch(perf, /secrets:\s*inherit/);
+    assert.doesNotMatch(perf, /GITHUB_TOKEN/);
+  });
+
+  it("#21 AC8: no deploy, wrangler or Cloudflare usage", () => {
+    assert.doesNotMatch(perf, /wrangler/i);
+    assert.doesNotMatch(perf, /deploy/i);
+    assert.doesNotMatch(perf, /CLOUDFLARE/i);
+  });
+
+  it("#21 AC3: runs locust headless with 50 users and a pinned locust== version", () => {
+    assert.match(perf, /pip install\s+locust==\d+\.\d+(\.\d+)?/);
+    assert.match(perf, /^\s*locust\b.*--headless/m);
+    assert.match(perf, /\s-u 50\b/);
+  });
+
+  it("#21 AC8: every uses: is SHA-pinned", () => {
+    const uses = [...perf.matchAll(/uses:\s*(\S+)/g)].map((m) => m[1]);
+    assert.ok(uses.length > 0);
+    for (const u of uses) assert.match(u, /^[\w.-]+\/[\w./-]+@[0-9a-f]{40}$/, `not SHA-pinned: ${u}`);
+  });
+
+  it("#21: the API is stopped in a step with if: always()", () => {
+    assert.match(perf, /-\s*name:\s*Stop API\s*\n\s+if:\s*always\(\)\s*\n\s+run:\s*kill\b/);
+  });
+
+  it("#21 AC7: summary goes to GITHUB_STEP_SUMMARY and results are uploaded as an artifact", () => {
+    assert.match(perf, />>\s*"\$GITHUB_STEP_SUMMARY"/);
+    assert.match(perf, /uses:\s*actions\/upload-artifact@/);
+  });
+
+  it("#21 AC5: memory and CPU are not gate inputs (gate call has no mem/cpu args)", () => {
+    const gate = perf.match(/python3? perf\/summarize\.py[^\n]*/);
+    assert.ok(gate, "gate invocation not found");
+    assert.doesNotMatch(gate[0], /mem|cpu|rss/i);
+    const py = read("perf/summarize.py");
+    assert.doesNotMatch(py, /add_argument\("--[\w-]*(mem|cpu|rss)/i);
   });
 });
