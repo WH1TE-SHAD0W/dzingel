@@ -24,6 +24,8 @@ api/                  Hono API (TypeScript)
   test/               Vitest API tests
 web/                  Astro frontend
   src/pages/          /  /login  /register  /quotes/new  /quotes/edit?id=<quote id>
+                      /terms  /privacy  (public static legal pages, #23)
+  src/layouts/        Base.astro (footer "Legal" nav on every page), Legal.astro (legal pages)
   src/components/     TopPanel (session check, group switcher, logout), QuoteFields
   src/scripts/        client scripts per page
   src/lib/            api client, form and quote-form helpers, group/session events
@@ -53,6 +55,28 @@ Environment variables for the API:
 | `BETTER_AUTH_URL` | unset (optional) | Public origin of the app; passed to Better Auth as `baseURL` (Node and Worker). |
 | `PORT` | `8787` | |
 | `DB_FILE` | `dzingel.sqlite` | |
+
+### Terms and Privacy pages (web, build-time)
+
+`/terms` and `/privacy` are static pages (`web/src/pages/terms.astro`, `privacy.astro`) marked
+**DRAFT - not legal advice** (#23 AC2). The operator details come from build-time variables read in
+`web/src/lib/legal.ts` (Astro inlines `PUBLIC_*` at build; nothing is fetched at runtime):
+
+| Variable | Default when unset | Notes |
+|---|---|---|
+| `PUBLIC_OPERATOR_NAME` | `[Operator name - not set]` | Who runs this instance. |
+| `PUBLIC_OPERATOR_CONTACT` | `[Contact - not set]` | Email or web address. |
+| `PUBLIC_TERMS_EFFECTIVE` | `[Date - not set]` | Effective date, e.g. `2026-01-31`. |
+
+Set them in `web/.env` for local runs, or in the build environment (see `docs/deployment.md`).
+Rebuild the web app after changing them. **To supply your own terms**, set the variables and edit
+the body text directly in `terms.astro` and `privacy.astro` (template plus config; there is no admin
+UI or runtime editor, #23 out of scope). The pages are English only. The final wording is owned by
+the operator/maintainer; the shipped text is a placeholder, not legal advice. Source: #23 (open
+question 4, decided by the maintainer), NFR-04.
+
+The register form has a required checkbox `#reg-terms` with a text error; the server enforces
+`acceptTerms: true` independently (`docs/api.md`, ADR 0009).
 
 ## Checks
 

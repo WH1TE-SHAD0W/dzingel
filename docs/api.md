@@ -26,12 +26,17 @@ WH1TE-SHAD0W/dzingel#2 (auth), #3 (membership), #4 (user directory), #5 (invites
 Usernames are 3-30 characters of `a-z 0-9 _ .` (lowercase only). Passwords are 8-128 characters.
 
 ### `POST /api/auth/register`  (no session required)
-Body: `{ "username": string, "password": string }`
+Body: `{ "username": string, "password": string, "acceptTerms": true }`
+- `acceptTerms` must be the boolean `true` (#23 AC5, SEC-02). It is checked in the route wrapper
+  **before** Better Auth is called. Missing, `false` or any non-boolean value (including the string
+  `"true"`) is rejected. The acceptance is not stored anywhere (ADR 0009).
 - `201` -> `{ "user": { "id", "username" } }` and a session cookie (the new user is signed in). The
   password is never returned.
-- `400` -> `{ "error": "invalid input", "fields": { "username"?: "...", "password"?: "..." } }`
+- `400` -> `{ "error": "invalid input", "fields": { "username"?: "...", "password"?: "...", "acceptTerms"?: "..." } }`
   for rule violations; plain `{ "error": "invalid input" }` for a non-JSON content type or malformed
-  body.
+  body. Without acceptance the answer is
+  `{ "error": "invalid input", "fields": { "acceptTerms": "must be accepted" } }`, merged with any
+  username/password field errors from the same request; no user is created.
 - `409` -> `{ "error": "username taken", "fields": { "username": "is already taken" } }`; nothing is
   created.
 - `429` -> `{ "error": "too many requests" }` (see Rate limiting).
