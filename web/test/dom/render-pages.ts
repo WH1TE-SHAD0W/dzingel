@@ -5,7 +5,7 @@
 import { experimental_AstroContainer as AstroContainer } from "astro/container";
 import type { TestProject } from "vitest/node";
 
-export type PageName = "index" | "login" | "register" | "quotes/new" | "quotes/edit";
+export type PageName = "index" | "login" | "register" | "quotes/new" | "quotes/edit" | "terms" | "privacy";
 
 declare module "vitest" {
   export interface ProvidedContext {
@@ -21,6 +21,8 @@ export default async function setup(project: TestProject): Promise<void> {
     register: () => import("../../src/pages/register.astro"),
     "quotes/new": () => import("../../src/pages/quotes/new.astro"),
     "quotes/edit": () => import("../../src/pages/quotes/edit.astro"),
+    terms: () => import("../../src/pages/terms.astro"),
+    privacy: () => import("../../src/pages/privacy.astro"),
   };
   const pages = {} as Record<PageName, string>;
   for (const [name, load] of Object.entries(modules) as [PageName, (typeof modules)[PageName]][]) {

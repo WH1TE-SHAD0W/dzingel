@@ -25,6 +25,8 @@ const SCRIPTS: Record<PageName, (() => Promise<unknown>)[]> = {
   index: [() => import("../../src/scripts/top-panel"), () => import("../../src/main")],
   "quotes/new": [() => import("../../src/scripts/top-panel"), () => import("../../src/scripts/quote-new")],
   "quotes/edit": [() => import("../../src/scripts/top-panel"), () => import("../../src/scripts/quote-edit")],
+  terms: [],
+  privacy: [],
 };
 
 /** The module script tags the rendered page carries (proves which component scripts it wires). */
@@ -34,6 +36,8 @@ export const SCRIPT_SOURCES: Record<PageName, RegExp[]> = {
   index: [/components\/TopPanel\.astro\?astro&type=script/, /pages\/index\.astro\?astro&type=script/],
   "quotes/new": [/components\/TopPanel\.astro\?astro&type=script/, /pages\/quotes\/new\.astro\?astro&type=script/],
   "quotes/edit": [/components\/TopPanel\.astro\?astro&type=script/, /pages\/quotes\/edit\.astro\?astro&type=script/],
+  terms: [],
+  privacy: [],
 };
 
 export function pageHtml(name: PageName): string {
