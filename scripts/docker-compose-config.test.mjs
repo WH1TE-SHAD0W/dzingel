@@ -186,6 +186,45 @@ describe("#20 AC7 forwarded-for is overwritten, not appended", () => {
   });
 });
 
+describe("#20 privacy: nginx access log omits query strings and IPs", () => {
+  const accessLogs = [...nginx.matchAll(/^\s*access_log\s+([^;]+);/gm)].map((m) => m[1].trim().split(/\s+/));
+  const fmtMatch = nginx.match(/^\s*log_format\s+(\S+)\s+((?:'[^']*'\s*)+);/m);
+  const fmtName = fmtMatch?.[1];
+  const fmtBody = fmtMatch ? [...fmtMatch[2].matchAll(/'([^']*)'/g)].map((m) => m[1]).join("") : "";
+
+  it("access_log is set and uses a named log_format", () => {
+    assert.ok(accessLogs.length >= 1, "no access_log directive");
+    assert.ok(fmtName, "no log_format defined");
+    for (const [path, format] of accessLogs) {
+      if (path === "off") continue;
+      assert.equal(format, fmtName, `access_log ${path} does not use log_format ${fmtName}`);
+    }
+    assert.ok(accessLogs.some(([p]) => p !== "off"), "access_log is off or missing");
+  });
+
+  it("no access_log relies on the default combined format", () => {
+    for (const parts of accessLogs) {
+      if (parts[0] === "off") continue;
+      assert.ok(parts.length >= 2, `bare access_log ${parts[0]} uses default combined format`);
+      assert.notEqual(parts[1], "combined");
+    }
+    assert.doesNotMatch(nginx, /^\s*access_log\s+\/dev\/stdout\s*;/m);
+  });
+
+  it("log_format logs the path via $uri", () => {
+    assert.ok(fmtBody.includes("$uri"), "log_format lacks $uri");
+  });
+
+  it("log_format contains no query string, IP, referer or user-agent variables", () => {
+    for (const v of [
+      "$request", "$request_uri", "$args", "$query_string", "$is_args", "$remote_addr",
+      "$http_referer", "$http_user_agent", "$http_x_forwarded_for", "$realip_remote_addr",
+    ]) {
+      assert.ok(!new RegExp(`\\${v}(?![A-Za-z0-9_])`).test(fmtBody), `log_format contains ${v}`);
+    }
+  });
+});
+
 describe("#20 AC9 no secrets, no third parties, .env ignored", () => {
   it("#20 AC9: .env.example sets BETTER_AUTH_SECRET to an empty placeholder", () => {
     assert.match(envExample, /^BETTER_AUTH_SECRET=\s*$/m);
