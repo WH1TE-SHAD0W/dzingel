@@ -1,0 +1,96 @@
+# Load test against a throwaway local API (issue #21, NFR-01..03).
+# Gates on failure rate and p95 only; memory and CPU are reported, never gating. The job is
+# non-blocking (continue-on-error). No secrets, no deploy, no Cloudflare: the API runs on the
+# runner with a temp SQLite file (ADR 0008).
+name: Perf
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perf-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  locust:
+    name: Locust load test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: |
+          npm ci
+          pip install locust==2.47.0
+
+      - name: Start API
+        run: |
+          # Generated here, never a repo secret; the API only lives for this job.
+          export BETTER_AUTH_SECRET="$(openssl rand -base64 32)"
+          export DB_FILE="$RUNNER_TEMP/perf.sqlite"
+          export PORT=8787
+          cd api
+          node --import tsx src/server.ts > "$RUNNER_TEMP/api.log" 2>&1 &
+          echo "API_PID=$!" >> "$GITHUB_ENV"
+          for _ in $(seq 30); do
+            curl -s -o /dev/null http://localhost:8787/api/groups && exit 0
+            sleep 1
+          done
+          echo "API did not become ready" >&2
+          exit 1
+
+      - name: Run Locust
+        run: |
+          cpu() { awk '{print $14 + $15}' "/proc/$API_PID/stat"; }  # utime+stime, clock ticks
+          cpu0=$(cpu); t0=$(date +%s.%N)
+          set +e
+          locust -f perf/locustfile.py --headless -u 50 -r 50 --run-time 30s \
+            --host http://localhost:8787 --csv "$RUNNER_TEMP/perf"
+          locust_rc=$?
+          set -e
+          cpu1=$(cpu); t1=$(date +%s.%N)
+          {
+            echo "## Locust load test (50 users, about 50 req/s, 30 s)"
+            echo
+            python perf/summarize.py "$RUNNER_TEMP/perf" > "$RUNNER_TEMP/gate.md" && gate_rc=0 || gate_rc=$?
+            cat "$RUNNER_TEMP/gate.md"
+            echo
+            echo "Reported only, never gating:"
+            echo
+            awk -v c0="$cpu0" -v c1="$cpu1" -v t0="$t0" -v t1="$t1" \
+              'BEGIN { printf "- CPU: %.1f%% of one core\n", (c1 - c0) / 100 / (t1 - t0) * 100 }'
+            grep VmHWM "/proc/$API_PID/status" | awk '{printf "- Peak memory (RSS): %.0f MB\n", $2 / 1024}'
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat "$RUNNER_TEMP/gate.md"
+          exit $(( gate_rc != 0 || locust_rc != 0 ))
+
+      - name: Stop API
+        if: always()
+        run: kill "$API_PID" || true
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: locust-results
+          path: ${{ runner.temp }}/perf_*.csv
+          if-no-files-found: warn
