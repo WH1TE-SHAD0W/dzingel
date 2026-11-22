@@ -64,7 +64,7 @@ describe("#2 AC4 logout requires a trusted Origin (cookie-bearing auth POST)", (
     });
     expect(login.status).toBe(200);
     const reg = await h.req("POST", "/api/auth/register", {
-      body: { username: "sam.dev", password: "synthetic-pass-1" },
+      body: { username: "sam.dev", password: "synthetic-pass-1", acceptTerms: true },
     });
     expect(reg.status).toBe(201);
   });
