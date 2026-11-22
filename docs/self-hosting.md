@@ -117,6 +117,27 @@ in front of `web` and forward to `WEB_PORT`. Then:
 Note: `context/architecture.md` describes NGINX "forcing HTTPS"; the shipped config does not, because
 there is no certificate to force with. Enforcement lives in the proxy you add.
 
+## Logging
+
+NGINX writes its access log to stdout (`docker compose logs web`) in a deliberately minimal format
+(`log_format private` in `web/nginx.conf`):
+
+```
+$time_iso8601 $request_method $uri $status $request_time
+```
+
+Each line holds the time, method, path, status and duration. It does **not** hold the query string,
+the client IP, the referer or the user agent. Reason: search terms travel in the query string
+(`/api/quotes?group=1&q=...`) and can be fragments of quote text, which is personal data about real
+people, often minors (CLAUDE.md section 4, `context/security-and-privacy.md`, SEC-05). `$uri` has no
+query string; the default `combined` format uses `$request`, which does.
+
+Example line: `GET /api/quotes 401` appears for the request above, with no `?group=1&q=...` and no address.
+
+If you replace the format with a richer one (for example `$request`, `$args`, `$remote_addr`),
+you do so knowingly: those logs then contain personal data, and you are responsible for access
+to them, retention and rotation. The error log (`/dev/stderr`, level `warn`) is unchanged.
+
 ## Health checks
 
 - `api`: runs `fetch('http://127.0.0.1:8787/api/auth/me')` inside the container and passes on **any
@@ -135,13 +156,16 @@ there is no certificate to force with. Enforcement lives in the proxy you add.
 
 Reported by `tester` for #20 (the documenter ran nothing):
 
-- `npm run test:scripts`: `ℹ tests 108`, `ℹ pass 108`, `ℹ fail 0`; 35 are new static tests in
-  `scripts/docker-compose-config.test.mjs`.
+- `npm run test:scripts`: `ℹ tests 112`, `ℹ pass 112`, `ℹ fail 0`; 39 are new static tests in
+  `scripts/docker-compose-config.test.mjs` (35 plus 4 on the access log format, commit c04cefb).
 - Runtime checks on Docker 29.6.2 / Compose v5.3.1: both containers healthy; register, login, group
   and quote through NGINX worked; `api` has no published port (`docker inspect` `PortBindings={}`);
   `id -u` is 1000 (api) and 101 (web); Node v24; a missing secret makes compose refuse and name
   the variable; a forged `X-Forwarded-For` is discarded by NGINX (a stand-in upstream saw only the
   peer address).
+- Access log, reported by the developer (Docker, real stack; not re-run by `tester`): after
+  `GET /api/quotes?group=1&q=secretterm` the web log showed `GET /api/quotes 401` and no query string
+  or IP (grep count 0).
 - Not verified: `npm test -w api` and typecheck (no `node_modules` in the worktree); a strict
   no-change second `up`; the real API rate limiter behind the compose NGINX end to end (only the
   developer's observation of 401 401 401 429 429); the backup and restore recipes above.

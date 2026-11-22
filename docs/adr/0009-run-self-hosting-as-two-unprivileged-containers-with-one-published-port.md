@@ -18,7 +18,11 @@ as root widens the damage of any bug. TLS is out of scope for #20 (SEC-04 is gui
 published port; it is an esbuild bundle of `api/src/server.ts` with dependencies installed in the
 image. The SQLite file is on the named volume `dzingel-data` at `/data`. The API healthcheck calls
 `/api/auth/me` and treats any HTTP response as healthy, with no new health route. The stack serves
-plain HTTP; TLS termination is left to a proxy the operator adds.
+plain HTTP; TLS termination is left to a proxy the operator adds. NGINX logs access to stdout with
+`log_format private '$time_iso8601 $request_method $uri $status $request_time'`: no query string,
+client IP, referer or user agent, because search terms in `?q=` can be quote-text fragments
+(CLAUDE.md section 4, `context/security-and-privacy.md`). Found by the reviewer (BLOCK) against the
+default `combined` format; fixed in commit eb7ff6a.
 
 ## Consequences
 - Easy: one published port, no root in either container, no change to application routes.
@@ -33,16 +37,25 @@ plain HTTP; TLS termination is left to a proxy the operator adds.
 - The bundle is built with the esbuild that ships with `tsx`; the Dockerfile looks for it in two
   places because npm may hoist it. If `tsx` changes, the build step may break.
 - `BETTER_AUTH_SECRET` is required by compose, but its 32-character minimum is not enforced.
+- The access log is minimal on purpose: debugging needs the path and status, not who asked or what
+  they searched for. Do not switch to `$request`, `$args`, `$query_string`, `$remote_addr`,
+  `$http_referer` or `$http_user_agent` in `log_format` without superseding this record; an operator
+  who does so locally takes responsibility for that personal data (`docs/self-hosting.md`).
 - The data volume is deleted by `docker compose down -v`; backup is the operator's job.
 
 ## Verification
 Reported by `tester` (the documenter ran nothing):
-- `npm run test:scripts`: `ℹ tests 108`, `ℹ pass 108`, `ℹ fail 0`; 35 are new static tests in
-  `scripts/docker-compose-config.test.mjs`.
+- `npm run test:scripts`: `ℹ tests 112`, `ℹ pass 112`, `ℹ fail 0`; 39 are new static tests in
+  `scripts/docker-compose-config.test.mjs` (35 plus 4 asserting the access log format omits query
+  strings and IPs, commit c04cefb).
 - Docker 29.6.2 / Compose v5.3.1: both containers healthy; register, login, group and quote through
   NGINX worked; `api` has no published port (`PortBindings={}`); `id -u` 1000 (api) and 101 (web);
   Node v24; a missing secret makes compose refuse naming the variable; a forged `X-Forwarded-For`
   is discarded by NGINX (a stand-in upstream saw only the peer address).
+
+Reported by the developer (Docker, real stack; not re-run by `tester`): after
+`GET /api/quotes?group=1&q=secretterm` the web log showed `GET /api/quotes 401` and no query string
+or IP (grep count 0).
 
 Not verified: `npm test -w api` and typecheck (no `node_modules` in the worktree); a strict no-change
 second `up`; the real API rate limiter behind the compose NGINX end to end (only the developer's
